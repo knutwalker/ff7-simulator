@@ -35,7 +35,7 @@ object Main extends SafeApp {
   val field = BattleField.init(party, enemies)
 
   override def runl(args: List[String]): IO[Unit] = {
-    val repetitions = args.headOption.flatMap(x ⇒ Try(x.toInt).toOption).getOrElse(10)
+    val repetitions = args.headOption.flatMap(x ⇒ Try(x.toInt).toOption).getOrElse(1)
     runRounds(repetitions)
   }
 
@@ -43,7 +43,7 @@ object Main extends SafeApp {
     List.fill(repetitions)(repetitions).traverse_(runRound)
 
   def runRound(ignored: Int): IO[Unit] = {
-    val simulation = Interact.run(runSimulation)
+    val simulation = Interact.run(runSimulation)(console.ConsoleInterpreter, IO.ioMonad)
     log(s"Starting a new round with $field") >> simulation >>= (_.traverse_(x ⇒ log(x)))
   }
 

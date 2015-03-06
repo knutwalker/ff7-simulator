@@ -16,11 +16,10 @@
 
 package ff7
 
-import algebra._
-
 import scalaz._, Scalaz._, Maybe._
 import std.list
 
+import algebra.{OutPerson, Input, Interact}
 import com.nicta.rng.Rng
 
 import math.{max, min}
