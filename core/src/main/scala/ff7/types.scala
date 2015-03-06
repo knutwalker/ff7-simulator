@@ -16,13 +16,14 @@
 
 package ff7
 
+import algebra.Interact
+import formula.Formula
+
 import scalaz._, Scalaz._
-import effect.IO
 import com.nicta.rng.Rng
 import shapeless.contrib.scalaz._
 import spire.math.Rational
 import Power._
-
 
 sealed trait Person {
   def name: String
@@ -83,7 +84,7 @@ final case class Character(
   val asPerson: Person = this
 
   def chosenAttack: MonsterAttack =
-    MonsterAttack("Attack", Maybe.empty, Physical, power, attackPercent)
+    MonsterAttack.physical("Attack", attackPercent, power)
 
   def hit(h: Hit): Person = h match {
     case Missed      ⇒ this
@@ -154,6 +155,8 @@ final case class MonsterAttacks(
   def defensePercent: DefensePercent = monster.defensePercent
   def attackPercent: AttackPercent = chosenAttack.attackPercent
   def asPerson: Person = monster
+
+  override def toString: String = s"$monster (${chosenAttack.name})"
 }
 
 
@@ -175,9 +178,13 @@ final case class MonsterAttack(
   name: String,
   cost: Maybe[MP],
   attackType: AttackType,
-  // formula: Formula,
+  formula: Formula,
   power: Power,
   attackPercent: AttackPercent)
+object MonsterAttack {
+  def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Maybe[MP] = Maybe.empty): MonsterAttack =
+  MonsterAttack(name, cost, Physical, formula.Physical, power, attackPercent)
+}
 
 final case class Team(persons: NonEmptyList[Person])
 object Team {
@@ -209,21 +216,34 @@ object Team {
 //    Team(row.wrapNel)
 //}
 
-final case class BattleField(heroes: Team, enemies: Team, round: Int = 0, history: List[BattleResult] = Nil) {
-  def aPartyIsEnded = List(heroes, enemies).exists(_.persons ∀ (_.hp.x <= 0))
+final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
+  def isFinished: Boolean = aborted || List(heroes, enemies).exists(_.persons ∀ (_.hp.x <= 0))
+  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
+}
+object BattleField {
+  def init(heroes: Team, enemies: Team): BattleField =
+    BattleField(heroes, enemies, 0, Vector(), aborted = false)
 }
 
 sealed trait BattleAttack
+object BattleAttack {
+  val abort: BattleAttack = AbortAttack
+  val none: BattleAttack = NoAttack
+  def attack(attacker: Attacker, target: Target): BattleAttack =
+    BattleAction(attacker, target)
+}
+case object AbortAttack extends BattleAttack
 case object NoAttack extends BattleAttack
 final case class BattleAction(attacker: Attacker, target: Target) extends BattleAttack
 
 sealed trait BattleResult
+case object AttackAborted extends BattleResult
 case object NotAttacked extends BattleResult
 final case class AttackResult(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit) extends BattleResult
 
 trait AI extends {
-  def setup(self: Monster): IO[Monster] = IO(self)
-  def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAttack]
+  def setup(self: Monster): Interact[Monster] = Interact.unit(self)
+  def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack]
 }
 object AI {
   def choose[A](num: Long, denom: Long, ifHit: ⇒ A, ifMiss: ⇒ A): Rng[A] =
@@ -238,8 +258,22 @@ object AI {
   def chance(r: Rational): Rng[Boolean] =
     Rng.chooselong(1L, r.denominatorAsLong)
       .map(i ⇒ i <= r.numeratorAsLong)
-}
 
+  trait Ai extends AI {
+    def attack: Rng[MonsterAttack]
+    def attack(self: Monster): Rng[MonsterAttack] = attack
+    def target(targets: Team): Rng[Person] = Rng.oneofL(targets.persons)
+    def modify(self: Monster): Monster = self
+
+    final def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
+      val tar = target(targets)
+      val att = attack(self)
+      val mon = modify(self)
+      val bat = tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
+      Interact.random(bat)
+    }
+  }
+}
 
 sealed trait Hit
 case object Missed extends Hit

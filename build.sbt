@@ -7,6 +7,54 @@ import sbtrelease.ReleasePlugin.ReleaseKeys._
 import sbtrelease.ReleaseStateTransformations._
 import xerial.sbt.Sonatype.SonatypeKeys._
 
+lazy val versions = new {
+  val     scalaz = "7.1.1"
+  val        rng = "1.3.0"
+  val      spire = "0.9.1"
+  val   argonaut = "6.1-M5"
+  val    monocle = "1.0.1"
+  val      jline = "2.12.1"
+  val    logging = "3.1.0"
+  val      log4j = "2.2"
+  val  shapeless = "0.3"
+  val     specs2 = "3.0"
+  val scalacheck = "1.12.2"
+}
+
+lazy val deps = new {
+  import versions._
+
+  val core = List(
+    "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "org.scalaz"                  %% "scalaz-concurrent"          % scalaz     ,
+    "com.github.julien-truffaut"  %% "monocle-core"               % monocle    ,
+    "com.github.julien-truffaut"  %% "monocle-generic"            % monocle    ,
+    "com.github.julien-truffaut"  %% "monocle-macro"              % monocle    ,
+    "com.github.julien-truffaut"  %% "monocle-law"                % monocle    ,
+    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  ,
+    "org.typelevel"               %% "shapeless-spire"            % shapeless
+      exclude("org.spire-math", "spire_2.11")                                  ,
+    "org.spire-math"              %% "spire"                      % spire      ,
+    "com.nicta"                   %% "rng"                        % rng        ,
+    "jline"                        % "jline"                      % jline      ,
+    "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
+    "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
+    "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
+    "org.apache.logging.log4j"     % "log4j-slf4j-impl"           % log4j      )
+
+  val tests = List(
+    "org.specs2"                  %% "specs2-core"                % specs2     ,
+    "org.specs2"                  %% "specs2-scalacheck"          % specs2     ,
+    "org.scalaz"                  %% "scalaz-scalacheck-binding"  % scalaz     ,
+    "org.scalacheck"              %% "scalacheck"                 % scalacheck ,
+    "org.typelevel"               %% "shapeless-scalacheck"       % shapeless  ,
+    "org.typelevel"               %% "scalaz-specs2"              % "0.3.0"    )
+    .map(_ % "test")
+
+  val guide = List("org.specs2" %% "specs2-html" % specs2 % "test")
+}
+
 lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
 lazy val projectMaintainer = SettingKey[String]("Maintainer")
@@ -16,10 +64,8 @@ lazy val buildSettings = List(
    projectMaintainer := "Paul Horn",
           githubUser := "knutwalker",
           githubRepo := "ff7-simulator",
-        scalaVersion := "2.11.5",
-  crossScalaVersions := "2.11.5" :: "2.10.4" :: Nil
+        scalaVersion := "2.11.6"
 )
-
 
 lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
@@ -31,48 +77,21 @@ lazy val parent = project.in(file("."))
 lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= List(
-  "org.scalaz"                 %% "scalaz-core"       % "7.1.1" ,
-  "org.scalaz"                 %% "scalaz-effect"     % "7.1.1" ,
-  "org.scalaz"                 %% "scalaz-concurrent" % "7.1.1" ,
-  "org.typelevel"              %% "shapeless-scalaz"  % "0.3"   ,
-  "com.nicta"                  %% "rng"               % "1.3.0" ,
-  "org.spire-math"             %% "spire"             % "0.9.1" ,
-  "org.typelevel"              %% "shapeless-spire"   % "0.3"
-    exclude("org.spire-math", "spire_2.11")                     ,
-  "io.argonaut"                %% "argonaut"          % "6.1-M5"
-    exclude("com.github.julien-truffaut", "monocle-macro_2.11")
-    exclude("com.github.julien-truffaut", "monocle-core_2.11")  ,
-  "com.github.julien-truffaut" %% "monocle-core"      % "1.0.1" ,
-  "com.github.julien-truffaut" %% "monocle-generic"   % "1.0.1" ,
-  "com.github.julien-truffaut" %% "monocle-macro"     % "1.0.1" ,
-  "com.typesafe.scala-logging" %% "scala-logging"     % "3.1.0" ,
-  "org.apache.logging.log4j"    % "log4j-api"         % "2.2"   ,
-  "org.apache.logging.log4j"    % "log4j-core"        % "2.2"   ,
-  "org.apache.logging.log4j"    % "log4j-slf4j-impl"  % "2.2"   ))
+  .settings(libraryDependencies ++= deps.core)
 
 lazy val guide = project
   .settings(name := "ff7-guide")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
   .settings(buildInfos: _*)
-  .settings(libraryDependencies ++= List(
-    "org.specs2" %% "specs2-html" % "2.4.16" % "test"))
+  .settings(libraryDependencies ++= deps.guide)
   .dependsOn(tests % "test->test")
 
 lazy val tests = project
   .settings(name := "ff7-tests")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .settings(libraryDependencies ++= List(
-    "com.github.julien-truffaut" %% "monocle-law"               % "1.0.1" ,
-    "org.specs2"                 %% "specs2-core"               % "2.4.16",
-    "org.specs2"                 %% "specs2-scalacheck"         % "2.4.16",
-    "org.scalacheck"             %% "scalacheck"                % "1.12.2",
-    "org.scalaz"                 %% "scalaz-scalacheck-binding" % "7.1.1" ,
-    "org.typelevel"              %% "shapeless-scalacheck"      % "0.3"   ,
-    "org.typelevel"              %% "scalaz-specs2"             % "0.3.0" )
-    .map(_ % "test"))
+  .settings(libraryDependencies ++= deps.tests)
   .dependsOn(core)
 
 // =================================
@@ -83,7 +102,7 @@ lazy val commonSettings = List(
     "-deprecation" :: "-explaintypes" :: "-feature" :: "-unchecked" ::
     "-language:existentials" :: "-language:higherKinds" :: "-language:implicitConversions" :: "-language:postfixOps" ::
     "-Xcheckinit" :: "-Xfatal-warnings" :: "-Xfuture" :: "-Xlint" ::
-    "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" ::
+    "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yrangepos" ::
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
   scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(
     url(s"https://github.com/$u/$r"),
@@ -93,7 +112,11 @@ lazy val commonSettings = List(
   shellPrompt := { state ⇒
     val name = Project.extract(state).currentRef.project
     (if (name == "parent") "" else name + " ") + "> "
-  }
+  },
+  fork in run := true,
+  connectInput in run := true,
+  logBuffered := false,
+  resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
 )
 
 lazy val publishSettings = List(

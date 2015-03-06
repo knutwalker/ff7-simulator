@@ -16,191 +16,136 @@
 
 package ff7
 
+import algebra._
+
 import scalaz._, Scalaz._, Maybe._
-import scalaz.effect.IO
+import std.list
 
 import com.nicta.rng.Rng
-import spire.math.Rational
 
 import math.{max, min}
 
-
 object Simulation {
+  import Interact.monad
+  type IOState[s, a] = StateT[Interact, s, a]
 
-  val damageRandom = Rng
-    .chooseint(0, 65535)
-    .map(i ⇒ Rational(i * 99, 65535).toInt + 1)
+  def apply(field: BattleField): Interact[BattleField] =
+    playAllRounds.eval(field)
 
-  val variation = Rng
-    .chooseint(0, 255)
-    .map(_ + 3841)
+  private val battleMonad = MonadState[IOState, BattleField]
 
-  def executeAttack(attacker: Attacker, target: Target): Rng[Hit] = {
-    val hits = calculateIfHits(attacker, target)
-    hits flatMap { h ⇒
-      if (h) calculateDamage(attacker, target)
-      else Rng.insert(Hit.missed)
-    }
+  private val setupPerson: Person ⇒ Interact[Person] = {
+    case m: Monster ⇒ m.ai.setup(m).map(_.asPerson)
+    case x          ⇒ Interact.unit(x)
   }
 
-  def calculateIfHits(attacker: Attacker, target: Target): Rng[Boolean] = {
-    calculateIfHitsPercent(attacker, target)
-      .flatMap(h ⇒ damageRandom.map(_ < h))
-  }
+  private val initiateRound =
+    StateT[Interact, BattleField, BattleField] { b ⇒ for {
+      hs ← b.heroes.persons.traverse(setupPerson)
+      es ← b.enemies.persons.traverse(setupPerson)
+    } yield b.copy(heroes = Team(hs), enemies = Team(es)).squared }
 
-  def calculateIfHitsPercent(attacker: Attacker, target: Target): Rng[Int] = {
-    // Lucky Hit:
-    //   The Attacker has a [Lck / 4]% chance of landing a Lucky Hit.  If this is
-    //   successful, then Hit% is immediately increased to 255%.
+  private val playRoundS =
+    StateT[Interact, BattleField, BattleField](b ⇒
+      playRound(b).map(_.squared))
 
-    // Lucky Evade:
-    //   The Target has a [Lck / 4]% chance of pulling off a Lucky Evade, but
-    //   *ONLY* if a Lucky Hit was not pulled off.  Furthermore, it uses the same
-    //   random number that was checked for Lucky Hit, so the Target's Lck must be
-    //   *greater* than the Attacker's Lck to even have a chance at this.  The
-    //   adjusted chance should therefore be expressed as:
-    //
-    //       Evade Chance = ([Target's Lck / 4] - [Attacker's Lck / 4])%.
+  private val playAllRounds =
+    initiateRound >> battleMonad.iterateUntil(playRoundS)(_.isFinished)
 
-    //   Note that only party members may obtain a Lucky Evade and only if a
-    //   non-party member is attacking them - enemies will never get a Lucky Evade.
-    //   If a Lucky Evade is pulled off, then the Hit% is immediately decreased
-    //   to 0%.
-
-    val hitPercent = ((attacker.dexterity / 4).x + attacker.attackPercent.x) + attacker.defensePercent.x - target.defensePercent.x
-    Rng.insert(hitPercent)
-  }
-
-  def calculateDamage(attacker: Attacker, target: Target): Rng[Hit] = {
-    val damage = calculateBaseDamage(attacker, target)
-    val criticalHits = calculateCritical(attacker, target)
-
-    for {
-      c ← criticalHits
-      d1 ← applyCritical(c, damage)
-      // TODO: rows
-      d3 ← applyVariance(d1)
-      d4 ← applyBounds(d3)
-    } yield {
-      if (c) Hit.critical(d4)
-      else Hit(d4)
-    }
-  }
-
-  def calculateBaseDamage(attacker: Attacker, target: Target): Int = {
-    val base = attacker.attack.x + Rational(attacker.attack.x + attacker.level.x, 32).toInt * Rational(attacker.attack.x * attacker.level.x, 32).toInt
-//    val power = attacker.power.x * base
-//    val power = attacker.power.x.toDouble
-    val power = attacker.power.x * 16
-    ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
-  }
-
-  def calculateCritical(attacker: Attacker, target: Target): Rng[Boolean] = {
-    val criticalPercent = Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
-    damageRandom.map(_ <= criticalPercent)
-  }
-
-  def applyCritical(critical: Boolean, damage: Int): Rng[Int] = {
-    Rng.insert(if (critical) damage * 2 else damage)
-  }
-
-  def applyVariance(d: Int): Rng[Int] = {
-    variation.map(m ⇒ Rational(d * m, 4096).toInt)
-  }
-
-  def applyBounds(damage: Int): Rng[Int] = {
-    Rng.insert(min(9999, max(1, damage)))
-  }
-
-  val setupPerson: Kleisli[IO, Person, Person] = Kleisli.kleisli {
-    case m: Monster ⇒
-      m.ai.setup(m).map(_.asPerson)
-    case x ⇒ IO(x)
-  }
-
-  val initiateRound: StateT[IO, BattleField, BattleField] =
-    StateT[IO, BattleField, BattleField] { b ⇒
-      val hsio = b.heroes.persons.traverse(setupPerson.run)
-      val esio = b.enemies.persons.traverse(setupPerson.run)
-      hsio.flatMap(hs ⇒ esio
-        .map(es ⇒ b.copy(heroes = Team(hs), enemies = Team(es))))
-        .map(_.squared)
-    }
-
-  val playRoundS =
-    StateT[IO, BattleField, BattleField](b ⇒ playRound(b).map(_.squared))
-
-  val playAllRounds: StateT[IO, BattleField, BattleField] =
-    initiateRound >> IndexedStateT.stateTMonadState[BattleField, IO]
-      .iterateUntil(playRoundS)(f ⇒ f.aPartyIsEnded)
-
-  def playRound(battle: BattleField): IO[BattleField] = {
+  private def playRound(battle: BattleField): Interact[BattleField] =
     runAttack(battle.heroes, battle.enemies) map {
       case m@AttackResult(originalAttacker, attacker, target, hit) ⇒
-        // update enemies
-        val tp = target.asPerson
-        val ntp = tp.hit(hit)
-        val enemies = battle.enemies.persons.list
-        val idx = enemies.indexOf(tp)
-        val newEnemies = enemies.updated(idx, ntp)
-        val newEnemyTeam = Team(NonEmptyList.nel(newEnemies.head, newEnemies.tail))
-        // update heroes
-        val heroes = battle.heroes.persons.list
-        val idx2 = heroes.indexOf(originalAttacker)
-        val newHeroes = heroes.updated(idx2, attacker.asPerson)
-        val newHeroesTeam = Team(NonEmptyList.nel(newHeroes.head, newHeroes.tail))
+        val enemies = update(target.asPerson, _.hit(hit), battle.enemies)
+        val heroes = update(originalAttacker, _ ⇒ attacker.asPerson, battle.heroes)
+        battle.round(m).copy(enemies, heroes)
+      case NotAttacked ⇒
+        battle.round(NotAttacked)
+      case AttackAborted ⇒
+        battle.round(AttackAborted).copy(aborted = true)
+    }
 
-        BattleField(
-          newEnemyTeam,
-          newHeroesTeam,
-          battle.round + 1,
-          m :: battle.history)
-      case m@NotAttacked ⇒
-        BattleField(
-          battle.enemies,
-          battle.heroes,
-          battle.round + 1,
-          m :: battle.history)
+  private def runAttack(attackers: Team, opponents: Team): Interact[BattleResult] =
+    Interact.random(chooseAttacker(attackers, opponents)).flatMap {
+      case Just(a) ⇒ chooseAttackings(a, attackers, opponents)
+      case Empty() ⇒ Interact.unit(NotAttacked)
+    }
+
+  private def chooseAttackings(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
+    chooseAttack(attacker, attackers, opponents).flatMap {
+      case BattleAction(x, t) ⇒
+        Interact.random(x.chosenAttack.formula(x, t))
+          .map(AttackResult(attacker, x, t, _))
+      case NoAttack ⇒
+        Interact.unit(NotAttacked)
+      case AbortAttack ⇒
+        Interact.unit(AttackAborted)
     }
   }
 
-  def runAttack(attackers: Team, opponents: Team): IO[BattleResult] = {
-    chooseAttacker(attackers, opponents).run.flatMap {
-      case Just(a) ⇒
-        chooseAttack(a, attackers, opponents).flatMap {
-          case BattleAction(x, t) ⇒
-            executeAttack(x, t).run.map(AttackResult(a, x, t, _))
-          case NoAttack ⇒
-            IO(NotAttacked)
-        }
-      case Empty() ⇒
-        IO(NotAttacked)
-    }
-  }
-
-  def chooseAttacker(attackers: Team, opponents: Team): Rng[Maybe[Person]] = {
+  private def chooseAttacker(attackers: Team, opponents: Team): Rng[Maybe[Person]] =
     chooseAlivePerson(attackers)
-  }
 
-  def chooseAttack(attacker: Person, attackers: Team, opponents: Team): IO[BattleAttack] = attacker match {
-    case c: Character ⇒
-      chooseAlivePerson(opponents).run
-        .map(_.cata(t ⇒ BattleAction(c, t.asTarget), NoAttack))
-
-    case m: Monster ⇒
-      val alive = opponents.persons.list.filter(_.hp.x > 0)
-      alive.headOption
-        .map(a ⇒ Team(NonEmptyList.nel(a, alive.tail)))
-        .map(os ⇒ m.ai(m, attackers, os))
-        .getOrElse(IO(NoAttack))
-  }
-
-  def chooseAlivePerson(team: Team): Rng[Maybe[Person]] = {
-    val alive = team.persons.list.filter(_.hp.x > 0)
+  private def chooseAlivePerson(team: Team): Rng[Maybe[Person]] = {
+    val alive = alivePersons(team)
     if (alive.isEmpty) Rng.insert(empty)
     else if (alive.tail.isEmpty)
       Rng.insert(just(alive.head))
     else
       Rng.oneofL(NonEmptyList.nel(alive.head, alive.tail)).map(just)
   }
+
+  private def chooseAttack(attacker: Person, attackers: Team, opponents: Team): Interact[BattleAttack] = attacker match {
+    case c: Character ⇒
+      list.toNel(alivePersons(opponents))
+        .fold(Interact.unit(BattleAttack.none))(selectPerson(c))
+
+    case m: Monster ⇒
+      val alive = opponents.persons.list.filter(_.hp.x > 0)
+      alive.headOption
+        .map(a ⇒ Team(NonEmptyList.nel(a, alive.tail)))
+        .map(os ⇒ m.ai(m, attackers, os))
+        .getOrElse(Interact.unit(NoAttack))
+  }
+
+  private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
+    Interact.printString(s"$a: Choose your enemy") >>= { _ ⇒
+      readEnemy(persons).map { mp ⇒
+        mp.cata(t ⇒ BattleAttack.attack(a, t.asTarget), BattleAttack.abort)
+      }
+    }
+
+  private def update(p: Person, f: Person ⇒ Person, team: Team): Team = {
+    val persons = team.persons.list
+    val idx = {
+      val i = persons.indexOf(p)
+      if (i == -1) None else Some(i)
+    }
+    val newPersons = idx.fold(persons)(i ⇒ persons.updated(i, f(p)))
+    Team(NonEmptyList.nel(newPersons.head, newPersons.tail))
+  }
+
+
+  private def alivePersons(team: Team): List[Person] =
+    team.persons.list.filter(_.hp.x > 0)
+
+  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
+    val bounded = min(max(0, current), persons.size - 1)
+    printEnemies(persons.list, bounded).flatMap {
+      case Input.Quit ⇒ Interact.unit(empty[Person])
+      case Input.Ok   ⇒ Interact.unit(just(persons.list(bounded)))
+      case Input.Up   ⇒ readEnemy(persons, bounded - 1)
+      case Input.Down ⇒ readEnemy(persons, bounded + 1)
+      case _          ⇒ readEnemy(persons, bounded)
+    }
+  }
+
+  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] =
+    persons
+      .zipWithIndex
+      .map(px ⇒ OutPerson(px._1, px._2 == current))
+
+  private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
+    _ ← Interact.printPersons(formatEnemies(persons, current))
+    i ← Interact.readInput
+  } yield i
 }

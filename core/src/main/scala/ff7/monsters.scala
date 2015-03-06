@@ -16,35 +16,27 @@
 
 package ff7
 
+import algebra._
 import scalaz._, Scalaz._
 import shapeless.contrib.scalaz._
 import Maybe._
-import effect.IO
 
 import com.nicta.rng.Rng
 import spire.math.Rational
 
 object monsters {
+  implicit def liftRng[A](a: A): Rng[A] = Rng.insert(a)
+
   val mp = {
-    val machineGun = MonsterAttack("Machine Gun",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100))
-    val tonfa = MonsterAttack("Tonfa",
-      empty, Physical,
-      Power(Rational(3, 2)),
-      AttackPercent(85))
-    object ai extends AI {
-      def apply(self: Monster, heroes: Team, targets: Team) = {
-        val attack =
-//          if (heroes.rowPosition(self) == FrontRow)
-          if (true)
-            AI.choose(1, 2, tonfa, machineGun)
-          else
-            AI.choose(1, 6, tonfa, machineGun)
-        val target = Rng.oneofL(targets.persons)
-        attack.flatMap(a ⇒ target.map(t ⇒ self.attacks(t, a))).run
-      }
+    val machineGun = MonsterAttack.physical("Machine Gun")
+    val tonfa = MonsterAttack.physical("Tonfa",
+      AttackPercent(85), Power(Rational(3, 2)))
+    object ai extends AI.Ai {
+      def attack =
+        if (true) // if (heroes.rowPosition(self) == FrontRow)
+          AI.choose(1, 2, tonfa, machineGun)
+        else
+          AI.choose(1, 6, tonfa, machineGun)
     }
     Monster("MP",
       Level(2),
@@ -62,22 +54,13 @@ object monsters {
     )
   }
   val guardHound = {
-    val bite = MonsterAttack("Bite",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100)
-    )
-    val tentacle = MonsterAttack("Tentacle",
-      empty, Physical,
-      Power(Rational(3, 2)),
-      AttackPercent(90)
-    )
-    object ai extends AI {
-      def apply(self: Monster, heroes: Team, targets: Team) = {
-        val attack = AI.choose(1, 3, tentacle, bite)
-        val target = targets.persons.minimumBy1(_.hp)
-        attack.map(self.attacks(target, _)).run
-      }
+    val bite = MonsterAttack.physical("Bite")
+    val tentacle = MonsterAttack.physical("Tentacle",
+      AttackPercent(90), Power(Rational(3, 2)))
+    object ai extends AI.Ai {
+      def attack = AI.choose(1, 3, tentacle, bite)
+      override def target(targets: Team) =
+        targets.persons.minimumBy1(_.hp)
     }
     Monster("Guard Hound",
       Level(3),
@@ -95,22 +78,18 @@ object monsters {
     )
   }
   val firstRay = {
-    val laserCannon = MonsterAttack("Laser Cannon",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100)
-    )
-    object ai extends AI {
+    val laserCannon = MonsterAttack.physical("Laser Cannon")
+    object ai extends AI.Ai {
       private val count = 0
-      def apply(self: Monster, heroes: Team, targets: Team) = {
-        val target = if (count == 0) {
+      override def target(targets: Team) = {
+        if (count == 0) {
           targets.persons.maximumBy1(_.hp)
         } else {
           // TODO: no attack
           targets.persons.maximumBy1(_.hp)
         }
-        IO(self.attacks(target, laserCannon))
       }
+      def attack = laserCannon
     }
     Monster("1st Ray",
       Level(4),
@@ -128,26 +107,14 @@ object monsters {
     )
   }
   val grunt = {
-    val handClaw = MonsterAttack("Handclaw",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100)
-    )
-    val beamGun = MonsterAttack("Beam Gun",
-      empty, Physical,
-      Power(Rational(9, 8)),
-      AttackPercent(100)
-    )
-    object ai extends AI {
-      def apply(self: Monster, heroes: Team, targets: Team) = {
-        // if (heroes.rowPosition(self) == FrontRow)
-        val attack = if (true) {
-          AI.choose(1, 2, beamGun, handClaw)
-        } else {
-          AI.choose(1, 12, handClaw, beamGun)
-        }
-        val target = Rng.oneofL(targets.persons)
-        attack.flatMap(a ⇒ target.map(t ⇒ self.attacks(t, a))).run
+    val handClaw = MonsterAttack.physical("Handclaw")
+    val beamGun = MonsterAttack.physical("Beam Gun",
+      power = Power(Rational(9, 8)))
+    object ai extends AI.Ai {
+      def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
+        AI.choose(1, 2, beamGun, handClaw)
+      } else {
+        AI.choose(1, 12, handClaw, beamGun)
       }
     }
     Monster("Grunt",
@@ -166,19 +133,12 @@ object monsters {
     )
   }
   val monoDrive = {
-    val drillDrive = BattleAttack("Drilldrive",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100)
-    )
-    val fire = BattleAttack("Fire",
-      just(4), Physical, // Magical
-      Power(Rational(1, 2)),
-      AttackPercent(100)
-    )
+    val drillDrive = MonsterAttack.physical("Drilldrive")
+    val fire = MonsterAttack.physical("Fire", // Magical
+      power = Power(Rational(1, 2)), cost = just(MP(4)))
     object ai extends AI {
-      def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAction] = {
-        IO(???)
+      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
+        ???
       }
     }
     Monster("Mono Drive",
@@ -197,54 +157,38 @@ object monsters {
     )
   }
   val sweeper = {
-    val machineGun = MonsterAttack("Machine Gun",
-      empty, Physical,
-      Power(Rational(1)),
-      AttackPercent(100)
-    )
-    val doubleMachineGun = MonsterAttack("W Machine Gun",
-      empty, Physical,
-      Power(Rational(7, 4)),
-      AttackPercent(100)
-    )
-    val smokeShot = MonsterAttack("Smoke Shot",
-      empty, Physical,
-      Power(Rational(3, 2)),
-      AttackPercent(75)
-    )
+    val machineGun = MonsterAttack.physical("Machine Gun")
+    val doubleMachineGun = MonsterAttack.physical("W Machine Gun",
+      power = Power(Rational(7, 4)))
+    val smokeShot = MonsterAttack.physical("Smoke Shot",
+      AttackPercent(75), Power(Rational(3, 2)))
 
-    lazy val state1: AI = new AI {
-      def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAttack] = {
-        val target = Rng.oneofL(targets.persons)
-        target.run.map(t ⇒ self.copy(ai = state2).attacks(t, smokeShot))
-      }
+    lazy val state1: AI = new AI.Ai {
+      def attack = smokeShot
+      override def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
-    lazy val state2: AI = new AI {
-      def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAttack] = {
-        val target = targets.persons.minimumBy1(_.hp)
-        IO(self.copy(ai = state3).attacks(target, machineGun))
-      }
+    lazy val state2: AI = new AI.Ai {
+      def attack = machineGun
+      override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
+      override def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
-    lazy val state3: AI = new AI {
-      def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAttack] = {
-        val target = targets.persons.minimumBy1(_.hp)
-        IO(self.copy(ai = state1).attacks(target, doubleMachineGun))
-      }
+    lazy val state3: AI = new AI.Ai {
+      def attack = doubleMachineGun
+      override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
+      override def modify(self: Monster): Monster = self.copy(ai = state1)
     }
 
     object ai extends AI {
-      override def setup(self: Monster) = {
-        Rng.chooseint(0, 3).map {
+      override def setup(self: Monster) =
+        Interact.random(Rng.chooseint(0, 3).map {
           case 0 ⇒ self.copy(ai = state1)
           case 1 ⇒ self.copy(ai = state2)
           case _ ⇒ self.copy(ai = state3)
-        }.run
-      }
-      def apply(self: Monster, heroes: Team, targets: Team): IO[BattleAttack] = {
-        IO.throwIO(new IllegalStateException("setup routine did not run"))
-      }
+        })
+      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] =
+        throw new IllegalStateException("setup routine did not run")
     }
     Monster("Sweeper",
       Level(8),
