@@ -16,16 +16,19 @@
 
 package ff7
 
-import scalaz._, Scalaz._, Maybe._
+import algebra.{Input, Interact, OutPerson}
+import Interact._
+
+import scalaz._
+import Maybe._
+import Scalaz._
 import std.list
 
-import algebra.{OutPerson, Input, Interact}
 import com.nicta.rng.Rng
 
 import math.{max, min}
 
 object Simulation {
-  import Interact.monad
   type IOState[s, a] = StateT[Interact, s, a]
 
   def apply(field: BattleField): Interact[BattleField] =
@@ -35,7 +38,7 @@ object Simulation {
 
   private val setupPerson: Person ⇒ Interact[Person] = {
     case m: Monster ⇒ m.ai.setup(m).map(_.asPerson)
-    case x          ⇒ Interact.unit(x)
+    case x          ⇒ unit(x)
   }
 
   private val initiateRound =
@@ -64,20 +67,20 @@ object Simulation {
     }
 
   private def runAttack(attackers: Team, opponents: Team): Interact[BattleResult] =
-    Interact.random(chooseAttacker(attackers, opponents)).flatMap {
+    random(chooseAttacker(attackers, opponents)).flatMap {
       case Just(a) ⇒ chooseAttackings(a, attackers, opponents)
-      case Empty() ⇒ Interact.unit(NotAttacked)
+      case Empty() ⇒ unit(NotAttacked)
     }
 
   private def chooseAttackings(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
     chooseAttack(attacker, attackers, opponents).flatMap {
       case BattleAction(x, t) ⇒
-        Interact.random(x.chosenAttack.formula(x, t))
+        random(x.chosenAttack.formula(x, t))
           .map(AttackResult(attacker, x, t, _))
       case NoAttack ⇒
-        Interact.unit(NotAttacked)
+        unit(NotAttacked)
       case AbortAttack ⇒
-        Interact.unit(AttackAborted)
+        unit(AttackAborted)
     }
   }
 
@@ -96,18 +99,18 @@ object Simulation {
   private def chooseAttack(attacker: Person, attackers: Team, opponents: Team): Interact[BattleAttack] = attacker match {
     case c: Character ⇒
       list.toNel(alivePersons(opponents))
-        .fold(Interact.unit(BattleAttack.none))(selectPerson(c))
+        .fold(unit(BattleAttack.none))(selectPerson(c))
 
     case m: Monster ⇒
       val alive = opponents.persons.list.filter(_.hp.x > 0)
       alive.headOption
         .map(a ⇒ Team(NonEmptyList.nel(a, alive.tail)))
         .map(os ⇒ m.ai(m, attackers, os))
-        .getOrElse(Interact.unit(NoAttack))
+        .getOrElse(unit(NoAttack))
   }
 
   private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
-    Interact.printString(s"$a: Choose your enemy") >>= { _ ⇒
+    printString(s"$a: Choose your enemy") >>= { _ ⇒
       readEnemy(persons).map { mp ⇒
         mp.cata(t ⇒ BattleAttack.attack(a, t.asTarget), BattleAttack.abort)
       }
@@ -130,8 +133,8 @@ object Simulation {
   private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
     printEnemies(persons.list, bounded).flatMap {
-      case Input.Quit ⇒ Interact.unit(empty[Person])
-      case Input.Ok   ⇒ Interact.unit(just(persons.list(bounded)))
+      case Input.Quit ⇒ unit(empty[Person])
+      case Input.Ok   ⇒ unit(just(persons.list(bounded)))
       case Input.Up   ⇒ readEnemy(persons, bounded - 1)
       case Input.Down ⇒ readEnemy(persons, bounded + 1)
       case _          ⇒ readEnemy(persons, bounded)
@@ -144,7 +147,7 @@ object Simulation {
       .map(px ⇒ OutPerson(px._1, px._2 == current))
 
   private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
-    _ ← Interact.printPersons(formatEnemies(persons, current))
-    i ← Interact.readInput
+    _ ← printPersons(formatEnemies(persons, current))
+    i ← readInput
   } yield i
 }

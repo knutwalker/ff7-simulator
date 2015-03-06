@@ -16,21 +16,10 @@
 
 package ff7
 
-import stats._
+import scalaz.Monoid
 
 import spire.math.Rational
 
-object weapons {
-  val busterSword = Weapon("Buster Sword",
-    Power(Rational(1)),
-    Attack(18),
-    AttackPercent(96),
-    MagicAttack(0)
-  )
-  val gatlingGun = Weapon("Gatling Gun",
-    Power(Rational(1)),
-    Attack(14),
-    AttackPercent(97),
-    MagicAttack(0)
-  )
+package object stats {
+  implicit val monoid: Monoid[Rational] = Monoid.instance(_ + _, Rational.zero)
 }

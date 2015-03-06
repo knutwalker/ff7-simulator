@@ -18,12 +18,14 @@ package ff7
 
 import algebra.Interact
 import formula.Formula
+import stats._
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
+
 import com.nicta.rng.Rng
 import shapeless.contrib.scalaz._
 import spire.math.Rational
-import Power._
 
 sealed trait Person {
   def name: String

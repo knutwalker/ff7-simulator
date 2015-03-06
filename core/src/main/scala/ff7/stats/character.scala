@@ -15,12 +15,9 @@
  */
 
 package ff7
-
-import scalaz.Monoid
+package stats
 
 import spire.math.Rational
-
-// ========= Characters =================
 
 final case class Level(x: Int) extends AnyVal
 final case class HP(x: Int) extends AnyVal
@@ -34,35 +31,3 @@ final case class Magic(x: Int) extends AnyVal
 final case class Spirit(x: Int) extends AnyVal
 final case class Luck(x: Int) extends AnyVal
 final case class XP(x: Int) extends AnyVal
-
-
-// ========= Battle =================
-
-final case class Attack(x: Int) extends AnyVal {
-  def +(y: Int): Attack = Attack(x + y)
-}
-final case class AttackPercent(x: Int) extends AnyVal
-final case class Defense(x: Int) extends AnyVal {
-  def +(y: Int): Defense = Defense(x + y)
-}
-final case class DefensePercent(x: Int) extends AnyVal {
-  def +(y: Int): DefensePercent = DefensePercent(x + y)
-}
-final case class MagicAttack(x: Int) extends AnyVal
-final case class MagicDefense(x: Int) extends AnyVal {
-  def +(y: Int): MagicDefense = MagicDefense(x + y)
-}
-final case class MagicDefensePercent(x: Int) extends AnyVal
-final case class HitPercent(x: Int) extends AnyVal
-
-// ========= Attacks =====================
-final case class Power(x: Rational) extends AnyVal
-object Power {
-  implicit val monoid: Monoid[Rational] = new Monoid[Rational] {
-    val zero: Rational = Rational.zero
-    def append(f1: Rational, f2: ⇒ Rational): Rational = f1 + f2
-  }
-}
-
-sealed trait AttackType
-case object Physical extends AttackType

@@ -16,6 +16,8 @@
 
 package ff7
 
+import stats._
+
 import scalaz.Maybe._
 
 object characters {

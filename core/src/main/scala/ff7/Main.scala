@@ -18,8 +18,9 @@ package ff7
 
 import algebra._
 
-import scalaz._, Scalaz._
-import effect.{SafeApp, IO}
+import scalaz._
+import Scalaz._
+import effect.{IO, SafeApp}
 
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory

@@ -17,11 +17,14 @@
 package ff7
 
 import algebra._
-import scalaz._, Scalaz._
-import shapeless.contrib.scalaz._
+import stats._
+
+import scalaz._
 import Maybe._
+import Scalaz._
 
 import com.nicta.rng.Rng
+import shapeless.contrib.scalaz._
 import spire.math.Rational
 
 object monsters {

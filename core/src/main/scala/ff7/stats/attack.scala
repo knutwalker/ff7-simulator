@@ -15,22 +15,11 @@
  */
 
 package ff7
-
-import stats._
+package stats
 
 import spire.math.Rational
 
-object weapons {
-  val busterSword = Weapon("Buster Sword",
-    Power(Rational(1)),
-    Attack(18),
-    AttackPercent(96),
-    MagicAttack(0)
-  )
-  val gatlingGun = Weapon("Gatling Gun",
-    Power(Rational(1)),
-    Attack(14),
-    AttackPercent(97),
-    MagicAttack(0)
-  )
-}
+final case class Power(x: Rational) extends AnyVal
+
+sealed trait AttackType
+case object Physical extends AttackType
