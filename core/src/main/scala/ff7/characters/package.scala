@@ -17,12 +17,11 @@
 package ff7
 
 import stats._
+import weapons._
 
 import scalaz.Maybe._
 
-object characters {
-  import weapons._
-
+package object characters {
   val cloud = Character("Cloud",
     Level(6),
     HP(302), HP(302),

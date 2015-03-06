@@ -16,6 +16,21 @@
 
 package ff7
 
-object armours {
+import stats._
 
+import spire.math.Rational
+
+package object weapons {
+  val busterSword = Weapon("Buster Sword",
+    Power(Rational(1)),
+    Attack(18),
+    AttackPercent(96),
+    MagicAttack(0)
+  )
+  val gatlingGun = Weapon("Gatling Gun",
+    Power(Rational(1)),
+    Attack(14),
+    AttackPercent(97),
+    MagicAttack(0)
+  )
 }
