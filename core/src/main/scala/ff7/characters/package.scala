@@ -16,6 +16,7 @@
 
 package ff7
 
+import simulation.Character
 import stats._
 import weapons._
 

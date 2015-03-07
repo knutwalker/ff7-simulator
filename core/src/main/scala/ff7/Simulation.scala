@@ -18,6 +18,7 @@ package ff7
 
 import algebra.{Input, Interact, OutPerson}
 import Interact._
+import simulation._
 
 import scalaz._
 import Maybe._
@@ -56,31 +57,31 @@ object Simulation {
 
   private def playRound(battle: BattleField): Interact[BattleField] =
     runAttack(battle.heroes, battle.enemies) map {
-      case m@AttackResult(originalAttacker, attacker, target, hit) ⇒
+      case m@BattleResult.Attack(originalAttacker, attacker, target, hit) ⇒
         val enemies = update(target.asPerson, _.hit(hit), battle.enemies)
         val heroes = update(originalAttacker, _ ⇒ attacker.asPerson, battle.heroes)
         battle.round(m).copy(enemies, heroes)
-      case NotAttacked ⇒
-        battle.round(NotAttacked)
-      case AttackAborted ⇒
-        battle.round(AttackAborted).copy(aborted = true)
+      case m@BattleResult.None ⇒
+        battle.round(m)
+      case m@BattleResult.Aborted ⇒
+        battle.round(m).copy(aborted = true)
     }
 
   private def runAttack(attackers: Team, opponents: Team): Interact[BattleResult] =
     random(chooseAttacker(attackers, opponents)).flatMap {
       case Just(a) ⇒ chooseAttackings(a, attackers, opponents)
-      case Empty() ⇒ unit(NotAttacked)
+      case Empty() ⇒ unit(BattleResult.None)
     }
 
   private def chooseAttackings(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
     chooseAttack(attacker, attackers, opponents).flatMap {
-      case BattleAction(x, t) ⇒
+      case BattleAttack.Attack(x, t) ⇒
         random(x.chosenAttack.formula(x, t))
-          .map(AttackResult(attacker, x, t, _))
-      case NoAttack ⇒
-        unit(NotAttacked)
-      case AbortAttack ⇒
-        unit(AttackAborted)
+          .map(BattleResult(attacker, x, t, _))
+      case BattleAttack.None ⇒
+        unit(BattleResult.none)
+      case BattleAttack.Abort ⇒
+        unit(BattleResult.aborted)
     }
   }
 
@@ -106,13 +107,13 @@ object Simulation {
       alive.headOption
         .map(a ⇒ Team(NonEmptyList.nel(a, alive.tail)))
         .map(os ⇒ m.ai(m, attackers, os))
-        .getOrElse(unit(NoAttack))
+        .getOrElse(unit(BattleAttack.None))
   }
 
   private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
     printString(s"$a: Choose your enemy") >>= { _ ⇒
       readEnemy(persons).map { mp ⇒
-        mp.cata(t ⇒ BattleAttack.attack(a, t.asTarget), BattleAttack.abort)
+        mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
       }
     }
 

@@ -18,6 +18,7 @@ package ff7
 
 import algebra._
 import monsters.midgar1.reactor1._
+import simulation.{BattleField, BattleResult, Hit, Team}
 
 import scalaz._
 import Scalaz._
@@ -53,15 +54,15 @@ object Main extends SafeApp {
     Simulation(field).map(resultMessages)
 
   def resultMessages(result: BattleField): Vector[String] = result.history.map {
-    case AttackResult(oa, a, t, Missed) ⇒
+    case BattleResult.Attack(oa, a, t, Hit.Missed) ⇒
       s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] but missed"
-    case AttackResult(oa, a, t, Hits(x)) ⇒
+    case BattleResult.Attack(oa, a, t, Hit.Hits(x)) ⇒
       s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit with $x damage"
-    case AttackResult(oa, a, t, Critical(x)) ⇒
+    case BattleResult.Attack(oa, a, t, Hit.Critical(x)) ⇒
       s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit critically with $x damage"
-    case NotAttacked ⇒
+    case BattleResult.None ⇒
       "No attack happened"
-    case AttackAborted ⇒
+    case BattleResult.Aborted ⇒
       "Attack was aborted"
   } :+ s"Finished round after ${result.history.size} turns"
 

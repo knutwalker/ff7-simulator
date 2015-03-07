@@ -15,8 +15,17 @@
  */
 
 package ff7
-package algebra
+package simulation
 
-import simulation.Person
+sealed trait BattleResult
+object BattleResult {
 
-case class OutPerson(person: Person, active: Boolean)
+  val aborted: BattleResult = Aborted
+  val none: BattleResult = None
+  def apply(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit): BattleResult =
+    Attack(originalAttacker, attacker, target, hit)
+
+  case object Aborted extends BattleResult
+  case object None extends BattleResult
+  final case class Attack(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit) extends BattleResult
+}

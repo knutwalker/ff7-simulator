@@ -16,6 +16,8 @@
 
 package ff7
 
+import simulation.{Target, Hit, Attacker}
+
 import com.nicta.rng.Rng
 
 package object formulas {

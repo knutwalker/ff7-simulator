@@ -22,4 +22,6 @@ import spire.math.Rational
 final case class Power(x: Rational) extends AnyVal
 
 sealed trait AttackType
-case object Physical extends AttackType
+object AttackType {
+  case object Physical extends AttackType
+}

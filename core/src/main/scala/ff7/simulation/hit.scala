@@ -15,8 +15,15 @@
  */
 
 package ff7
-package algebra
+package simulation
 
-import simulation.Person
+sealed trait Hit
+object Hit {
+  val missed: Hit = Missed
+  def apply(damage: Int): Hit = Hits(damage)
+  def critical(damage: Int): Hit = Critical(damage)
 
-case class OutPerson(person: Person, active: Boolean)
+  case object Missed extends Hit
+  final case class Hits(damage: Int) extends Hit
+  final case class Critical(damage: Int) extends Hit
+}

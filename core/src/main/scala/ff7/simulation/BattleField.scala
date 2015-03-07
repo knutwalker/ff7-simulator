@@ -15,8 +15,16 @@
  */
 
 package ff7
-package algebra
+package simulation
 
-import simulation.Person
+import scalaz._
+import Scalaz._
 
-case class OutPerson(person: Person, active: Boolean)
+final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
+  def isFinished: Boolean = aborted || (List(heroes, enemies) ∃ (_.persons ∀ (_.hp.x <= 0)))
+  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
+}
+object BattleField {
+  def init(heroes: Team, enemies: Team): BattleField =
+    BattleField(heroes, enemies, 0, Vector(), aborted = false)
+}

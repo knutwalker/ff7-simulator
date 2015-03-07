@@ -19,6 +19,7 @@ package monsters
 package midgar1
 
 import algebra._
+import simulation.{AI, BattleAttack, Team, Monster, MonsterAttack}
 import stats._
 
 import scalaz._
@@ -35,7 +36,7 @@ package object reactor1 {
     val machineGun = MonsterAttack.physical("Machine Gun")
     val tonfa = MonsterAttack.physical("Tonfa",
       AttackPercent(85), Power(Rational(3, 2)))
-    object ai extends AI.Ai {
+    object ai extends SimpleAi {
       def attack =
         if (true) // if (heroes.rowPosition(self) == FrontRow)
           AI.choose(1, 2, tonfa, machineGun)
@@ -62,7 +63,7 @@ package object reactor1 {
     val bite = MonsterAttack.physical("Bite")
     val tentacle = MonsterAttack.physical("Tentacle",
       AttackPercent(90), Power(Rational(3, 2)))
-    object ai extends AI.Ai {
+    object ai extends SimpleAi {
       def attack = AI.choose(1, 3, tentacle, bite)
       override def target(targets: Team) =
         targets.persons.minimumBy1(_.hp)
@@ -88,6 +89,7 @@ package object reactor1 {
     val fire = MonsterAttack.physical("Fire", // Magical
       power = Power(Rational(1, 2)), cost = just(MP(4)))
     object ai extends AI {
+      def setup(self: Monster): Interact[Monster] = ???
       def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
         ???
       }
@@ -112,7 +114,7 @@ package object reactor1 {
     val handClaw = MonsterAttack.physical("Handclaw")
     val beamGun = MonsterAttack.physical("Beam Gun",
       power = Power(Rational(9, 8)))
-    object ai extends AI.Ai {
+    object ai extends SimpleAi {
       def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
         AI.choose(1, 2, beamGun, handClaw)
       } else {
@@ -137,7 +139,7 @@ package object reactor1 {
 
   val firstRay = {
     val laserCannon = MonsterAttack.physical("Laser Cannon")
-    object ai extends AI.Ai {
+    object ai extends SimpleAi {
       private val count = 0
       override def target(targets: Team) = {
         if (count == 0) {
@@ -172,18 +174,18 @@ package object reactor1 {
     val smokeShot = MonsterAttack.physical("Smoke Shot",
       AttackPercent(75), Power(Rational(3, 2)))
 
-    lazy val state1: AI = new AI.Ai {
+    lazy val state1: AI = new SimpleAi {
       def attack = smokeShot
       override def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
-    lazy val state2: AI = new AI.Ai {
+    lazy val state2: AI = new SimpleAi {
       def attack = machineGun
       override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
-    lazy val state3: AI = new AI.Ai {
+    lazy val state3: AI = new SimpleAi {
       def attack = doubleMachineGun
       override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state1)

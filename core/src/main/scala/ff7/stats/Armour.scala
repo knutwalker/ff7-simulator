@@ -15,8 +15,11 @@
  */
 
 package ff7
-package algebra
+package stats
 
-import simulation.Person
-
-case class OutPerson(person: Person, active: Boolean)
+final case class Armour(
+  name: String,
+  defense: Defense,
+  defensePercent: DefensePercent,
+  magicDefense: MagicDefense,
+  magicDefensePercent: MagicDefensePercent)
