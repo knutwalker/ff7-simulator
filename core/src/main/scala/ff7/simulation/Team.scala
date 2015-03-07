@@ -19,12 +19,12 @@ package simulation
 
 import battle.Person
 
-import scalaz._
-
-final case class Team(persons: NonEmptyList[Person])
+final case class Team(first: Person, rest: List[Person]) {
+  def persons: List[Person] = first :: rest
+}
 object Team {
   def apply(person: Person, persons: Person*): Team =
-    Team(NonEmptyList(person, persons: _*))
+    Team(person, persons.toList)
 }
 
 //sealed trait RowPosition

@@ -26,7 +26,7 @@ import com.nicta.rng.Rng
 trait SimpleAi extends AI {
   def attack: Rng[MonsterAttack]
   def attack(self: Monster): Rng[MonsterAttack] = attack
-  def target(targets: Team): Rng[Person] = Rng.oneofL(targets.persons)
+  def target(targets: Team): Rng[Person] = Rng.oneofL(targets.toNel)
   def modify(self: Monster): Monster = self
 
   final def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {

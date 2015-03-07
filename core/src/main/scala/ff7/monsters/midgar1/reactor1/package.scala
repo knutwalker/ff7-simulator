@@ -65,8 +65,7 @@ package object reactor1 {
       AttackPercent(90), Power(Rational(3, 2)))
     object ai extends SimpleAi {
       def attack = AI.choose(1, 3, tentacle, bite)
-      override def target(targets: Team) =
-        targets.persons.minimumBy1(_.hp)
+      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
     }
     Monster("Guard Hound",
       Level(3),
@@ -143,10 +142,10 @@ package object reactor1 {
       private val count = 0
       override def target(targets: Team) = {
         if (count == 0) {
-          targets.persons.maximumBy1(_.hp)
+          targets.toNel.maximumBy1(_.hp)
         } else {
           // TODO: no attack
-          targets.persons.maximumBy1(_.hp)
+          targets.toNel.maximumBy1(_.hp)
         }
       }
       def attack = laserCannon
@@ -181,13 +180,13 @@ package object reactor1 {
 
     lazy val state2: AI = new SimpleAi {
       def attack = machineGun
-      override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
+      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
     lazy val state3: AI = new SimpleAi {
       def attack = doubleMachineGun
-      override def target(targets: Team) = targets.persons.minimumBy1(_.hp)
+      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state1)
     }
 

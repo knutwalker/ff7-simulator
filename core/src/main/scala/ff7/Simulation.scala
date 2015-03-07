@@ -20,6 +20,7 @@ import algebra.{Input, Interact, OutPerson}
 import Interact._
 import battle._
 import characters.Character
+import monsters._
 import simulation._
 
 import scalaz._
@@ -46,9 +47,9 @@ object Simulation {
 
   private val initiateRound =
     StateT[Interact, BattleField, BattleField] { b ⇒ for {
-      hs ← b.heroes.persons.traverse(setupPerson)
-      es ← b.enemies.persons.traverse(setupPerson)
-    } yield b.copy(heroes = Team(hs), enemies = Team(es)).squared }
+      hs ← b.heroes.toNel.traverse(setupPerson)
+      es ← b.enemies.toNel.traverse(setupPerson)
+    } yield b.copy(heroes = hs.toTeam, enemies = es.toTeam).squared }
 
   private val playRoundS =
     StateT[Interact, BattleField, BattleField](b ⇒
@@ -108,10 +109,9 @@ object Simulation {
         .fold(unit(BattleAttack.none))(selectPerson(c))
 
     case m: Monster ⇒
-      val alive = opponents.persons.list.filter(_.hp.x > 0)
+      val alive = opponents.persons.filter(_.hp.x > 0)
       alive.headOption
-        .map(a ⇒ Team(NonEmptyList.nel(a, alive.tail)))
-        .map(os ⇒ m.ai(m, attackers, os))
+        .map(a ⇒ m.ai(m, attackers, Team(a, alive.tail)))
         .getOrElse(unit(BattleAttack.None))
   }
 
@@ -123,18 +123,18 @@ object Simulation {
     }
 
   private def update(p: Person, f: Person ⇒ Person, team: Team): Team = {
-    val persons = team.persons.list
+    val persons = team.persons
     val idx = {
       val i = persons.indexOf(p)
       if (i == -1) None else Some(i)
     }
     val newPersons = idx.fold(persons)(i ⇒ persons.updated(i, f(p)))
-    Team(NonEmptyList.nel(newPersons.head, newPersons.tail))
+    Team(newPersons.head, newPersons.tail)
   }
 
 
   private def alivePersons(team: Team): List[Person] =
-    team.persons.list.filter(_.hp.x > 0)
+    team.persons.filter(_.hp.x > 0)
 
   private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
