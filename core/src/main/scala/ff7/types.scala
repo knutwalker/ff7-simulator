@@ -17,7 +17,7 @@
 package ff7
 
 import algebra.Interact
-import formula.Formula
+import formulas.Formula
 import stats._
 
 import scalaz._
@@ -185,7 +185,7 @@ final case class MonsterAttack(
   attackPercent: AttackPercent)
 object MonsterAttack {
   def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Maybe[MP] = Maybe.empty): MonsterAttack =
-  MonsterAttack(name, cost, Physical, formula.Physical, power, attackPercent)
+  MonsterAttack(name, cost, Physical, formulas.Physical, power, attackPercent)
 }
 
 final case class Team(persons: NonEmptyList[Person])
