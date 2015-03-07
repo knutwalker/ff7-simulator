@@ -15,9 +15,7 @@
  */
 
 package ff7
-package simulation
-
-import battle.Person
+package battle
 
 final case class Team(first: Person, rest: List[Person]) {
   def persons: List[Person] = first :: rest

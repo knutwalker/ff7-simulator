@@ -17,9 +17,8 @@
 package ff7
 
 import algebra._
-import battle.{BattleResult, Hit}
+import battle.{BattleField, Team, BattleResult, Hit}
 import monsters.midgar1.reactor1._
-import simulation.{BattleField, Team}
 
 import scalaz._
 import Scalaz._

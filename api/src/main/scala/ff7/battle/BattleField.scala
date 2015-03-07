@@ -15,15 +15,10 @@
  */
 
 package ff7
-package simulation
-
-import battle.BattleResult
-
-import scalaz._
-import Scalaz._
+package battle
 
 final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
-  def isFinished: Boolean = aborted || (List(heroes, enemies) ∃ (_.persons ∀ (_.hp.x <= 0)))
+  def isFinished: Boolean = aborted || (List(heroes, enemies) exists (_.persons forall (_.hp.x <= 0)))
   def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
 }
 object BattleField {

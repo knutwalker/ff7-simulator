@@ -16,8 +16,7 @@
 
 package ff7
 
-import battle.Person
-import simulation.Team
+import battle.{Team, Person}
 
 import scalaz.Isomorphism._
 import scalaz.NonEmptyList

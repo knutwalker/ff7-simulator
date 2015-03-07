@@ -46,8 +46,8 @@ final case class Monster(
   def attacks(p: Person, a: MonsterAttack): BattleAttack =
     BattleAttack(attacks(a), p.asTarget)
 
-  def asTarget: Target = this
-  def asPerson: Person = this
+  val asTarget: Target = this
+  val asPerson: Person = this
   def hit(h: Hit): Person = h match {
     case Hit.Missed      ⇒ this
     case Hit.Hits(c)     ⇒ copy(hp = HP(hp.x - c))
