@@ -15,6 +15,8 @@
  */
 
 package ff7
+package monsters
+package midgar1
 
 import algebra._
 import stats._
@@ -27,8 +29,7 @@ import com.nicta.rng.Rng
 import shapeless.contrib.scalaz._
 import spire.math.Rational
 
-object monsters {
-  implicit def liftRng[A](a: A): Rng[A] = Rng.insert(a)
+package object reactor1 {
 
   val mp = {
     val machineGun = MonsterAttack.physical("Machine Gun")
@@ -56,6 +57,7 @@ object monsters {
       ai
     )
   }
+
   val guardHound = {
     val bite = MonsterAttack.physical("Bite")
     val tentacle = MonsterAttack.physical("Tentacle",
@@ -80,6 +82,59 @@ object monsters {
       ai
     )
   }
+
+  val monoDrive = {
+    val drillDrive = MonsterAttack.physical("Drilldrive")
+    val fire = MonsterAttack.physical("Fire", // Magical
+      power = Power(Rational(1, 2)), cost = just(MP(4)))
+    object ai extends AI {
+      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
+        ???
+      }
+    }
+    Monster("Mono Drive",
+      Level(2),
+      XP(18),
+      HP(28), HP(28),
+      MP(28), MP(28),
+      Attack(3),
+      Defense(6),
+      DefensePercent(6),
+      Dexterity(49),
+      MagicAttack(3),
+      MagicDefense(4),
+      Luck(2),
+      ai
+    )
+  }
+
+  val grunt = {
+    val handClaw = MonsterAttack.physical("Handclaw")
+    val beamGun = MonsterAttack.physical("Beam Gun",
+      power = Power(Rational(9, 8)))
+    object ai extends AI.Ai {
+      def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
+        AI.choose(1, 2, beamGun, handClaw)
+      } else {
+        AI.choose(1, 12, handClaw, beamGun)
+      }
+    }
+    Monster("Grunt",
+      Level(7),
+      XP(22),
+      HP(40), HP(40),
+      MP(0), MP(0),
+      Attack(12),
+      Defense(10),
+      DefensePercent(4),
+      Dexterity(58),
+      MagicAttack(2),
+      MagicDefense(2),
+      Luck(8),
+      ai
+    )
+  }
+
   val firstRay = {
     val laserCannon = MonsterAttack.physical("Laser Cannon")
     object ai extends AI.Ai {
@@ -109,56 +164,7 @@ object monsters {
       ai
     )
   }
-  val grunt = {
-    val handClaw = MonsterAttack.physical("Handclaw")
-    val beamGun = MonsterAttack.physical("Beam Gun",
-      power = Power(Rational(9, 8)))
-    object ai extends AI.Ai {
-      def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
-        AI.choose(1, 2, beamGun, handClaw)
-      } else {
-        AI.choose(1, 12, handClaw, beamGun)
-      }
-    }
-    Monster("Grunt",
-      Level(7),
-      XP(22),
-      HP(40), HP(40),
-      MP(0), MP(0),
-      Attack(12),
-      Defense(10),
-      DefensePercent(4),
-      Dexterity(58),
-      MagicAttack(2),
-      MagicDefense(2),
-      Luck(8),
-      ai
-    )
-  }
-  val monoDrive = {
-    val drillDrive = MonsterAttack.physical("Drilldrive")
-    val fire = MonsterAttack.physical("Fire", // Magical
-      power = Power(Rational(1, 2)), cost = just(MP(4)))
-    object ai extends AI {
-      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
-        ???
-      }
-    }
-    Monster("Mono Drive",
-      Level(2),
-      XP(18),
-      HP(28), HP(28),
-      MP(28), MP(28),
-      Attack(3),
-      Defense(6),
-      DefensePercent(6),
-      Dexterity(49),
-      MagicAttack(3),
-      MagicDefense(4),
-      Luck(2),
-      ai
-    )
-  }
+
   val sweeper = {
     val machineGun = MonsterAttack.physical("Machine Gun")
     val doubleMachineGun = MonsterAttack.physical("W Machine Gun",

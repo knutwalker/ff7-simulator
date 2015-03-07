@@ -17,6 +17,7 @@
 package ff7
 
 import algebra._
+import monsters.midgar1.reactor1._
 
 import scalaz._
 import Scalaz._
@@ -32,7 +33,7 @@ object Main extends SafeApp {
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
   val party = Team(characters.cloud2, characters.barret)
-  val enemies = Team(monsters.sweeper.copy(name = "Sweeper A"), monsters.sweeper.copy(name = "Sweeper B"))
+  val enemies = Team(sweeper.copy(name = "Sweeper A"), sweeper.copy(name = "Sweeper B"))
   val field = BattleField.init(party, enemies)
 
   override def runl(args: List[String]): IO[Unit] = {

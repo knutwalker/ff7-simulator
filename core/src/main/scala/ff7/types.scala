@@ -274,6 +274,8 @@ object AI {
       val bat = tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
       Interact.random(bat)
     }
+
+    implicit protected def liftRng[A](a: A): Rng[A] = Rng.insert(a)
   }
 }
 
