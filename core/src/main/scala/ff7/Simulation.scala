@@ -19,6 +19,7 @@ package ff7
 import algebra.{Input, Interact, OutPerson}
 import Interact._
 import battle._
+import characters.Character
 import simulation._
 
 import scalaz._

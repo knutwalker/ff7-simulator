@@ -15,7 +15,7 @@
  */
 
 package ff7
-package simulation
+package characters
 
 import battle._
 import stats._
@@ -65,62 +65,4 @@ final case class Character(
   //  def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
   //  def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
 
-}
-
-final case class Monster(
-  name: String,
-  level: Level,
-  xp: XP,
-  // win: Win,
-  hp: HP, maxHp: HP,
-  // ap: AP,
-  // steal: Steal,
-  mp: MP, maxMp: MP,
-  // gil: Gil,
-  // morph: Morph,
-  attack: Attack,
-  defense: Defense,
-  defensePercent: DefensePercent,
-  dexterity: Dexterity,
-  magicAttack: MagicAttack,
-  magicDefense: MagicDefense,
-  luck: Luck,
-  ai: AI) extends Person with Target {
-
-  def attacks(a: MonsterAttack): MonsterAttacks =
-    MonsterAttacks(this, a)
-
-  def attacks(p: Person, a: MonsterAttack): BattleAttack =
-    BattleAttack(attacks(a), p.asTarget)
-
-  def asTarget: Target = this
-  def asPerson: Person = this
-  def hit(h: Hit): Person = h match {
-    case Hit.Missed      ⇒ this
-    case Hit.Hits(c)     ⇒ copy(hp = HP(hp.x - c))
-    case Hit.Critical(c) ⇒ copy(hp = HP(hp.x - c))
-  }
-
-  override def toString: String =
-    s"$name [HP ${hp.x}/${maxHp.x}]"
-}
-
-final case class MonsterAttacks(
-  monster: Monster,
-  chosenAttack: MonsterAttack
-  ) extends Attacker with Target {
-  def name: String = monster.name
-  def hp: HP = monster.hp
-  def mp: MP = monster.mp
-  def level: Level = monster.level
-  def dexterity: Dexterity = monster.dexterity
-  def luck: Luck = monster.luck
-  def power: Power = chosenAttack.power
-  def attack: Attack = monster.attack
-  def defense: Defense = monster.defense
-  def defensePercent: DefensePercent = monster.defensePercent
-  def attackPercent: AttackPercent = chosenAttack.attackPercent
-  def asPerson: Person = monster
-
-  override def toString: String = s"$monster (${chosenAttack.name})"
 }
