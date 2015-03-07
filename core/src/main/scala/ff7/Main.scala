@@ -46,7 +46,8 @@ object Main extends SafeApp {
     List.fill(repetitions)(repetitions).traverse_(runRound)
 
   def runRound(ignored: Int): IO[Unit] = {
-    val simulation = Interact.run(runSimulation)(console.ConsoleInterpreter, IO.ioMonad)
+    import console.ConsoleInterpreter
+    val simulation = Interact.run(runSimulation)
     log(s"Starting a new round with $field") >> simulation >>= (_.traverse_(x ⇒ log(x)))
   }
 

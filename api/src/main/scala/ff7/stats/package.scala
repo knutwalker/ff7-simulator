@@ -16,10 +16,12 @@
 
 package ff7
 
-import scalaz.Monoid
-
+import spire.algebra.Monoid
 import spire.math.Rational
 
 package object stats {
-  implicit val monoid: Monoid[Rational] = Monoid.instance(_ + _, Rational.zero)
+  implicit val monoid: Monoid[Rational] = new Monoid[Rational] {
+    val id: Rational = Rational.zero
+    def op(x: Rational, y: Rational): Rational = x + y
+  }
 }

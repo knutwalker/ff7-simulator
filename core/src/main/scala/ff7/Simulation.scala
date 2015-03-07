@@ -145,7 +145,7 @@ object Simulation {
   private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] =
     persons
       .zipWithIndex
-      .map(px ⇒ OutPerson(px._1, px._2 == current))
+      .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
 
   private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
     _ ← printPersons(formatEnemies(persons, current))

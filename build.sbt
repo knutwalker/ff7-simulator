@@ -24,9 +24,18 @@ lazy val versions = new {
 lazy val deps = new {
   import versions._
 
-  val core = List(
+  val api = List(
+    "org.spire-math"              %% "spire"                      % spire      )
+
+  val algebra = List(
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
+    "com.nicta"                   %% "rng"                        % rng        )
+
+  val console = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "jline"                        % "jline"                      % jline      )
+
+  val core = List(
     "org.scalaz"                  %% "scalaz-concurrent"          % scalaz     ,
     "com.github.julien-truffaut"  %% "monocle-core"               % monocle    ,
     "com.github.julien-truffaut"  %% "monocle-generic"            % monocle    ,
@@ -35,9 +44,6 @@ lazy val deps = new {
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless  ,
     "org.typelevel"               %% "shapeless-spire"            % shapeless
       exclude("org.spire-math", "spire_2.11")                                  ,
-    "org.spire-math"              %% "spire"                      % spire      ,
-    "com.nicta"                   %% "rng"                        % rng        ,
-    "jline"                        % "jline"                      % jline      ,
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
     "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
     "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
@@ -51,9 +57,49 @@ lazy val deps = new {
     "org.typelevel"               %% "shapeless-scalacheck"       % shapeless  ,
     "org.typelevel"               %% "scalaz-specs2"              % "0.3.0"    )
     .map(_ % "test")
-
-  val guide = List("org.specs2" %% "specs2-html" % specs2 % "test")
 }
+
+lazy val api = project
+  .settings(name := "ff7-api")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.api)
+
+lazy val algebra = project
+  .settings(name := "ff7-algebra")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.algebra)
+
+lazy val equipment = project
+  .settings(name := "ff7-equipment")
+  .settings(ff7Settings: _*)
+  .dependsOn(api)
+
+lazy val console = project
+  .settings(name := "ff7-console")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.console)
+  .dependsOn(algebra)
+
+lazy val core = project
+  .settings(name := "ff7")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.core)
+  .dependsOn(algebra, api, console, equipment)
+
+lazy val tests = project
+  .settings(name := "ff7-tests")
+  .settings(ff7Settings: _*)
+  .settings(doNotPublish: _*)
+  .settings(libraryDependencies ++= deps.tests)
+  .dependsOn(core)
+
+lazy val parent = project.in(file("."))
+  .settings(name := "ff7-parent")
+  .settings(ff7Settings: _*)
+  .settings(doNotPublish: _*)
+  .aggregate(algebra, api, console, core, equipment, tests)
+
+// =================================
 
 lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
@@ -66,35 +112,6 @@ lazy val buildSettings = List(
           githubRepo := "ff7-simulator",
         scalaVersion := "2.11.6"
 )
-
-lazy val parent = project.in(file("."))
-  .settings(name := "ff7-parent")
-  .settings(ff7Settings: _*)
-  .settings(doNotPublish: _*)
-  .dependsOn(core, tests, guide)
-  .aggregate(core, tests, guide)
-
-lazy val core = project
-  .settings(name := "ff7")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.core)
-
-lazy val guide = project
-  .settings(name := "ff7-guide")
-  .settings(ff7Settings: _*)
-  .settings(doNotPublish: _*)
-  .settings(buildInfos: _*)
-  .settings(libraryDependencies ++= deps.guide)
-  .dependsOn(tests % "test->test")
-
-lazy val tests = project
-  .settings(name := "ff7-tests")
-  .settings(ff7Settings: _*)
-  .settings(doNotPublish: _*)
-  .settings(libraryDependencies ++= deps.tests)
-  .dependsOn(core)
-
-// =================================
 
 lazy val commonSettings = List(
   scalacOptions ++=

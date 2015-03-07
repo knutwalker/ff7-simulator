@@ -15,10 +15,6 @@
  */
 
 package ff7
+package algebra
 
-import scalaz.{Coyoneda, Free}
-
-package object algebra {
-  type Interact[A] = Free.FreeC[InteractOp, A]
-  type InteractMonad[A] = Coyoneda[InteractOp, A]
-}
+case class OutPerson(person: String, active: Boolean)
