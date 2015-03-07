@@ -76,23 +76,14 @@ object Simulation {
       case Empty() ⇒ unit(BattleResult.None)
     }
 
-  private def chooseAttackings(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
-    chooseAttack(attacker, attackers, opponents).flatMap {
-      case BattleAttack.Attack(x, t) ⇒
-        x.chosenAttack.formulaType match {
-          case FormulaType.Physical ⇒
-            random(formulas.Physical(x, t))
-              .map(BattleResult(attacker, x, t, _))
-        }
-      case BattleAttack.None ⇒
-        unit(BattleResult.none)
-      case BattleAttack.Abort ⇒
-        unit(BattleResult.aborted)
-    }
+  private def chooseAttacker(attackers: Team): Rng[Maybe[Person]] = {
+    chooseAlivePerson(attackers)
   }
 
-  private def chooseAttacker(attackers: Team, opponents: Team): Rng[Maybe[Person]] =
-    chooseAlivePerson(attackers)
+
+  private def alivePersons(team: Team): List[Person] = {
+    team.persons.filter(_.hp.x > 0)
+  }
 
   private def chooseAlivePerson(team: Team): Rng[Maybe[Person]] = {
     val alive = alivePersons(team)
@@ -103,16 +94,25 @@ object Simulation {
       Rng.oneofL(NonEmptyList.nel(alive.head, alive.tail)).map(just)
   }
 
-  private def chooseAttack(attacker: Person, attackers: Team, opponents: Team): Interact[BattleAttack] = attacker match {
-    case c: Character ⇒
-      list.toNel(alivePersons(opponents))
-        .fold(unit(BattleAttack.none))(selectPerson(c))
+  private def attack(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
+    chooseAttack(attacker, attackers, opponents).flatMap {
+      case BattleAttack.Attack(x, t) ⇒ executeAttack(attacker, x, t)
+      case BattleAttack.None         ⇒ unit(BattleResult.none)
+      case BattleAttack.Abort        ⇒ unit(BattleResult.aborted)
+    }
+  }
 
-    case m: Monster ⇒
-      val alive = opponents.persons.filter(_.hp.x > 0)
-      alive.headOption
-        .map(a ⇒ m.ai(m, attackers, Team(a, alive.tail)))
-        .getOrElse(unit(BattleAttack.None))
+    attacker match {
+      case c: Character ⇒
+        list.toNel(alivePersons(opponents))
+          .fold(unit(BattleAttack.none))(selectPerson(c))
+
+      case m: Monster ⇒
+        val alive = opponents.persons.filter(_.hp.x > 0)
+        alive.headOption
+          .map(a ⇒ m.ai(m, attackers, Team(a, alive.tail)))
+          .getOrElse(unit(BattleAttack.None))
+    }
   }
 
   private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
@@ -121,20 +121,6 @@ object Simulation {
         mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
       }
     }
-
-  private def update(p: Person, f: Person ⇒ Person, team: Team): Team = {
-    val persons = team.persons
-    val idx = {
-      val i = persons.indexOf(p)
-      if (i == -1) None else Some(i)
-    }
-    val newPersons = idx.fold(persons)(i ⇒ persons.updated(i, f(p)))
-    Team(newPersons.head, newPersons.tail)
-  }
-
-
-  private def alivePersons(team: Team): List[Person] =
-    team.persons.filter(_.hp.x > 0)
 
   private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
@@ -147,13 +133,30 @@ object Simulation {
     }
   }
 
-  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] =
-    persons
-      .zipWithIndex
-      .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
-
   private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
     _ ← printPersons(formatEnemies(persons, current))
     i ← readInput
   } yield i
+
+  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] = persons
+      .zipWithIndex
+      .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
+
+  private def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
+    attacker.chosenAttack.formulaType match {
+      case FormulaType.Physical ⇒
+        random(formulas.Physical(attacker, target))
+          .map(BattleResult(originalAttacker, attacker, target, _))
+    }
+  }
+
+  private def update(p: Person, f: Person ⇒ Person, team: Team): Team = {
+    val persons = team.persons
+    val idx = {
+      val i = persons.indexOf(p)
+      if (i == -1) None else Some(i)
+    }
+    val newPersons = idx.fold(persons)(i ⇒ persons.updated(i, f(p)))
+    Team(newPersons.head, newPersons.tail)
+  }
 }
