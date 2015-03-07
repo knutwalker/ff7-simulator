@@ -35,6 +35,9 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "jline"                        % "jline"                      % jline      )
 
+  val formulas = List(
+    "com.nicta"                   %% "rng"                        % rng        )
+
   val core = List(
     "org.scalaz"                  %% "scalaz-concurrent"          % scalaz     ,
     "com.github.julien-truffaut"  %% "monocle-core"               % monocle    ,
@@ -74,6 +77,12 @@ lazy val equipment = project
   .settings(ff7Settings: _*)
   .dependsOn(api)
 
+lazy val formulas = project
+  .settings(name := "ff7-formulas")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.formulas)
+  .dependsOn(api)
+
 lazy val console = project
   .settings(name := "ff7-console")
   .settings(ff7Settings: _*)
@@ -84,7 +93,7 @@ lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(algebra, api, console, equipment)
+  .dependsOn(algebra, api, console, equipment, formulas)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -97,7 +106,7 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .aggregate(algebra, api, console, core, equipment, tests)
+  .aggregate(algebra, api, console, core, equipment, formulas, tests)
 
 // =================================
 
