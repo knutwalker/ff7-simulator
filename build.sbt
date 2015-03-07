@@ -43,13 +43,6 @@ lazy val deps = new {
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless  )
 
   val core = List(
-    "org.scalaz"                  %% "scalaz-concurrent"          % scalaz     ,
-    "com.github.julien-truffaut"  %% "monocle-core"               % monocle    ,
-    "com.github.julien-truffaut"  %% "monocle-generic"            % monocle    ,
-    "com.github.julien-truffaut"  %% "monocle-macro"              % monocle    ,
-    "com.github.julien-truffaut"  %% "monocle-law"                % monocle    ,
-    "org.typelevel"               %% "shapeless-spire"            % shapeless
-      exclude("org.spire-math", "spire_2.11")                                  ,
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
     "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
     "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
