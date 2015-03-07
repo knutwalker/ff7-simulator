@@ -17,7 +17,7 @@
 package ff7
 package formulas
 
-import stats.{Attacker, Target, Hit}
+import battle.{Attacker, Hit, Target}
 
 import com.nicta.rng.Rng
 import spire.math.Rational

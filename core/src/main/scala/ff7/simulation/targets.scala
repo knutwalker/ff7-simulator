@@ -17,6 +17,7 @@
 package ff7
 package simulation
 
+import battle._
 import stats._
 
 import scalaz._

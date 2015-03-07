@@ -15,9 +15,14 @@
  */
 
 package ff7
-package stats
+package battle
 
-sealed trait AttackType
-object AttackType {
-  case object Physical extends AttackType
+import stats._
+
+trait Target {
+  def level: Level
+  def luck: Luck
+  def defense: Defense
+  def defensePercent: DefensePercent
+  def asPerson: Person
 }

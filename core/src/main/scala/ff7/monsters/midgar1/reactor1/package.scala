@@ -19,6 +19,7 @@ package monsters
 package midgar1
 
 import algebra._
+import battle.{MonsterAttack, BattleAttack}
 import simulation.{AI, Team, Monster}
 import stats._
 

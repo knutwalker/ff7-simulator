@@ -15,16 +15,14 @@
  */
 
 package ff7
-package stats
+package battle
 
-trait Attacker {
-  def level: Level
-  def dexterity: Dexterity
-  def luck: Luck
-  def power: Power
-  def attack: Attack
-  def attackPercent: AttackPercent
-  def defensePercent: DefensePercent
-  def asPerson: Person
-  def chosenAttack: MonsterAttack
+import stats._
+
+trait Person {
+  def name: String
+  def hp: HP
+  def mp: MP
+  def asTarget: Target
+  def hit(h: Hit): Person
 }

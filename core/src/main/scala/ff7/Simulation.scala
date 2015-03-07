@@ -18,8 +18,8 @@ package ff7
 
 import algebra.{Input, Interact, OutPerson}
 import Interact._
+import battle._
 import simulation._
-import stats.{Attacker, BattleAttack, BattleResult, FormulaType, Person}
 
 import scalaz._
 import Maybe._

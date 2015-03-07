@@ -17,7 +17,7 @@
 package ff7
 package simulation
 
-import stats.BattleResult
+import battle.BattleResult
 
 import scalaz._
 import Scalaz._

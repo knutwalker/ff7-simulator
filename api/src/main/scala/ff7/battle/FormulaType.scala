@@ -15,7 +15,7 @@
  */
 
 package ff7
-package stats
+package battle
 
 sealed trait FormulaType
 object FormulaType {

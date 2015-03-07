@@ -15,17 +15,19 @@
  */
 
 package ff7
-package stats
+package battle
 
+import stats._
 
-final case class MonsterAttack(
-  name: String,
-  cost: Option[MP],
-  attackType: AttackType,
-  formulaType: FormulaType,
-  power: Power,
-  attackPercent: AttackPercent)
-object MonsterAttack {
-  def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): MonsterAttack =
-    MonsterAttack(name, cost, AttackType.Physical, FormulaType.Physical, power, attackPercent)
+sealed trait BattleResult
+object BattleResult {
+
+  val aborted: BattleResult = Aborted
+  val none: BattleResult = None
+  def apply(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit): BattleResult =
+    Attack(originalAttacker, attacker, target, hit)
+
+  case object Aborted extends BattleResult
+  case object None extends BattleResult
+  final case class Attack(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit) extends BattleResult
 }

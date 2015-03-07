@@ -17,7 +17,7 @@
 package ff7
 package simulation
 
-import stats.Person
+import battle.Person
 
 import scalaz._
 

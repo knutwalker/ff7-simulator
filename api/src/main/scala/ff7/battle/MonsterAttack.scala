@@ -15,12 +15,18 @@
  */
 
 package ff7
-package stats
+package battle
 
-trait Target {
-  def level: Level
-  def luck: Luck
-  def defense: Defense
-  def defensePercent: DefensePercent
-  def asPerson: Person
+import stats._
+
+final case class MonsterAttack(
+  name: String,
+  cost: Option[MP],
+  attackType: AttackType,
+  formulaType: FormulaType,
+  power: Power,
+  attackPercent: AttackPercent)
+object MonsterAttack {
+  def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): MonsterAttack =
+    MonsterAttack(name, cost, AttackType.Physical, FormulaType.Physical, power, attackPercent)
 }

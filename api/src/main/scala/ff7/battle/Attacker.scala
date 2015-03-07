@@ -15,15 +15,18 @@
  */
 
 package ff7
-package stats
+package battle
 
-sealed trait Hit
-object Hit {
-  val missed: Hit = Missed
-  def apply(damage: Int): Hit = Hits(damage)
-  def critical(damage: Int): Hit = Critical(damage)
+import stats._
 
-  case object Missed extends Hit
-  final case class Hits(damage: Int) extends Hit
-  final case class Critical(damage: Int) extends Hit
+trait Attacker {
+  def level: Level
+  def dexterity: Dexterity
+  def luck: Luck
+  def power: Power
+  def attack: Attack
+  def attackPercent: AttackPercent
+  def defensePercent: DefensePercent
+  def asPerson: Person
+  def chosenAttack: MonsterAttack
 }
