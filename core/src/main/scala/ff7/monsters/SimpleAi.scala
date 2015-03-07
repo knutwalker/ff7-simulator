@@ -19,6 +19,7 @@ package monsters
 
 import algebra._
 import simulation._
+import stats.{BattleAttack, MonsterAttack, Person}
 
 import com.nicta.rng.Rng
 

@@ -17,6 +17,8 @@
 package ff7
 package simulation
 
+import stats.Person
+
 import scalaz._
 
 final case class Team(persons: NonEmptyList[Person])

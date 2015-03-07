@@ -17,6 +17,8 @@
 package ff7
 package stats
 
+import spire.math.Rational
+
 final case class Attack(x: Int) extends AnyVal {
   def +(y: Int): Attack = Attack(x + y)
 }
@@ -33,3 +35,5 @@ final case class MagicDefense(x: Int) extends AnyVal {
 }
 final case class MagicDefensePercent(x: Int) extends AnyVal
 final case class HitPercent(x: Int) extends AnyVal
+
+final case class Power(x: Rational) extends AnyVal

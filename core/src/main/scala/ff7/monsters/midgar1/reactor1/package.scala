@@ -19,11 +19,10 @@ package monsters
 package midgar1
 
 import algebra._
-import simulation.{AI, BattleAttack, Team, Monster, MonsterAttack}
+import simulation.{AI, Team, Monster}
 import stats._
 
 import scalaz._
-import Maybe._
 import Scalaz._
 
 import com.nicta.rng.Rng
@@ -87,7 +86,7 @@ package object reactor1 {
   val monoDrive = {
     val drillDrive = MonsterAttack.physical("Drilldrive")
     val fire = MonsterAttack.physical("Fire", // Magical
-      power = Power(Rational(1, 2)), cost = just(MP(4)))
+      power = Power(Rational(1, 2)), cost = some(MP(4)))
     object ai extends AI {
       def setup(self: Monster): Interact[Monster] = ???
       def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {

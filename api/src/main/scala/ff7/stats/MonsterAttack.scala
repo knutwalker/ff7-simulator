@@ -15,18 +15,17 @@
  */
 
 package ff7
-package simulation
+package stats
 
-import stats.BattleResult
 
-import scalaz._
-import Scalaz._
-
-final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
-  def isFinished: Boolean = aborted || (List(heroes, enemies) ∃ (_.persons ∀ (_.hp.x <= 0)))
-  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
-}
-object BattleField {
-  def init(heroes: Team, enemies: Team): BattleField =
-    BattleField(heroes, enemies, 0, Vector(), aborted = false)
+final case class MonsterAttack(
+  name: String,
+  cost: Option[MP],
+  attackType: AttackType,
+  formulaType: FormulaType,
+  power: Power,
+  attackPercent: AttackPercent)
+object MonsterAttack {
+  def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): MonsterAttack =
+    MonsterAttack(name, cost, AttackType.Physical, FormulaType.Physical, power, attackPercent)
 }

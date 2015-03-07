@@ -15,15 +15,12 @@
  */
 
 package ff7
-package simulation
+package stats
 
-sealed trait Hit
-object Hit {
-  val missed: Hit = Missed
-  def apply(damage: Int): Hit = Hits(damage)
-  def critical(damage: Int): Hit = Critical(damage)
-
-  case object Missed extends Hit
-  final case class Hits(damage: Int) extends Hit
-  final case class Critical(damage: Int) extends Hit
+trait Person {
+  def name: String
+  def hp: HP
+  def mp: MP
+  def asTarget: Target
+  def hit(h: Hit): Person
 }

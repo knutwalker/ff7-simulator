@@ -15,18 +15,9 @@
  */
 
 package ff7
-package simulation
+package stats
 
-import stats.BattleResult
-
-import scalaz._
-import Scalaz._
-
-final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
-  def isFinished: Boolean = aborted || (List(heroes, enemies) ∃ (_.persons ∀ (_.hp.x <= 0)))
-  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
-}
-object BattleField {
-  def init(heroes: Team, enemies: Team): BattleField =
-    BattleField(heroes, enemies, 0, Vector(), aborted = false)
+sealed trait AttackType
+object AttackType {
+  case object Physical extends AttackType
 }

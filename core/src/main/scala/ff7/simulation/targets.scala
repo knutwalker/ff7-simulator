@@ -17,48 +17,12 @@
 package ff7
 package simulation
 
-import formulas._
 import stats._
 
 import scalaz._
 import Scalaz._
 
 import shapeless.contrib.scalaz._
-
-
-sealed trait Person {
-  def name: String
-  def hp: HP
-  def mp: MP
-  def asTarget: Target
-  def hit(h: Hit): Person
-}
-object Person {
-  implicit val equal: Equal[Person] = Equal.equalRef
-}
-
-sealed trait Attacker {
-  def level: Level
-  def dexterity: Dexterity
-  def luck: Luck
-  def power: Power
-  def attack: Attack
-  def attackPercent: AttackPercent
-  def defensePercent: DefensePercent
-  def asPerson: Person
-  def chosenAttack: MonsterAttack
-}
-
-sealed trait Target {
-  def level: Level
-  def luck: Luck
-  def defense: Defense
-  def defensePercent: DefensePercent
-  def asPerson: Person
-}
-object Target {
-  implicit val equal: Equal[Target] = Equal.equalRef
-}
 
 final case class Character(
   name: String,
@@ -158,16 +122,4 @@ final case class MonsterAttacks(
   def asPerson: Person = monster
 
   override def toString: String = s"$monster (${chosenAttack.name})"
-}
-
-final case class MonsterAttack(
-  name: String,
-  cost: Maybe[MP],
-  attackType: AttackType,
-  formula: Formula,
-  power: Power,
-  attackPercent: AttackPercent)
-object MonsterAttack {
-  def physical(name: String, attackPercent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Maybe[MP] = Maybe.empty): MonsterAttack =
-    MonsterAttack(name, cost, AttackType.Physical, formulas.Physical, power, attackPercent)
 }

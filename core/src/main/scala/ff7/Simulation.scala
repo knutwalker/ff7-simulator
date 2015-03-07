@@ -19,6 +19,7 @@ package ff7
 import algebra.{Input, Interact, OutPerson}
 import Interact._
 import simulation._
+import stats.{Attacker, BattleAttack, BattleResult, FormulaType, Person}
 
 import scalaz._
 import Maybe._
@@ -76,8 +77,11 @@ object Simulation {
   private def chooseAttackings(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
     chooseAttack(attacker, attackers, opponents).flatMap {
       case BattleAttack.Attack(x, t) ⇒
-        random(x.chosenAttack.formula(x, t))
-          .map(BattleResult(attacker, x, t, _))
+        x.chosenAttack.formulaType match {
+          case FormulaType.Physical ⇒
+            random(formulas.Physical(x, t))
+              .map(BattleResult(attacker, x, t, _))
+        }
       case BattleAttack.None ⇒
         unit(BattleResult.none)
       case BattleAttack.Abort ⇒

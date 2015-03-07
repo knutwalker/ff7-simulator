@@ -15,18 +15,16 @@
  */
 
 package ff7
-package simulation
+package stats
 
-import stats.BattleResult
+sealed trait BattleAttack
+object BattleAttack {
+  val abort: BattleAttack = Abort
+  val none: BattleAttack = None
+  def apply(attacker: Attacker, target: Target): BattleAttack =
+    Attack(attacker, target)
 
-import scalaz._
-import Scalaz._
-
-final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
-  def isFinished: Boolean = aborted || (List(heroes, enemies) ∃ (_.persons ∀ (_.hp.x <= 0)))
-  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
-}
-object BattleField {
-  def init(heroes: Team, enemies: Team): BattleField =
-    BattleField(heroes, enemies, 0, Vector(), aborted = false)
+  case object Abort extends BattleAttack
+  case object None extends BattleAttack
+  final case class Attack(attacker: Attacker, target: Target) extends BattleAttack
 }

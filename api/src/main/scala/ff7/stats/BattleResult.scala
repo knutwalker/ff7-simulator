@@ -15,7 +15,7 @@
  */
 
 package ff7
-package simulation
+package stats
 
 sealed trait BattleResult
 object BattleResult {

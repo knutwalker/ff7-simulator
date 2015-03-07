@@ -15,16 +15,9 @@
  */
 
 package ff7
-package simulation
+package stats
 
-sealed trait BattleAttack
-object BattleAttack {
-  val abort: BattleAttack = Abort
-  val none: BattleAttack = None
-  def apply(attacker: Attacker, target: Target): BattleAttack =
-    Attack(attacker, target)
-
-  case object Abort extends BattleAttack
-  case object None extends BattleAttack
-  final case class Attack(attacker: Attacker, target: Target) extends BattleAttack
+sealed trait FormulaType
+object FormulaType {
+  case object Physical extends FormulaType
 }

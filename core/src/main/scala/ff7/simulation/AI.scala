@@ -18,6 +18,7 @@ package ff7
 package simulation
 
 import algebra.Interact
+import stats.BattleAttack
 
 import com.nicta.rng.Rng
 import spire.math.Rational

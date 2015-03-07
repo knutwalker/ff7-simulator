@@ -17,11 +17,14 @@
 package ff7
 package stats
 
-import spire.math.Rational
-
-final case class Power(x: Rational) extends AnyVal
-
-sealed trait AttackType
-object AttackType {
-  case object Physical extends AttackType
+trait Attacker {
+  def level: Level
+  def dexterity: Dexterity
+  def luck: Luck
+  def power: Power
+  def attack: Attack
+  def attackPercent: AttackPercent
+  def defensePercent: DefensePercent
+  def asPerson: Person
+  def chosenAttack: MonsterAttack
 }
