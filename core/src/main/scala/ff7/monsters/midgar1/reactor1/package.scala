@@ -20,7 +20,6 @@ package midgar1
 
 import algebra._
 import battle.{Team, MonsterAttack, BattleAttack}
-import simulation.{AI, Monster}
 import stats._
 
 import scalaz._

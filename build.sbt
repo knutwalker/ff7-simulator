@@ -31,15 +31,13 @@ lazy val deps = new {
 
   val api = List(
     "org.spire-math"              %% "spire"                      % spire      ,
+    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  ,
     "de.knutwalker"               %% "transducers-scala"          % transducer )
 
   val algebra = List(
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
-
-  val characters = List(
-    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  )
 
   val console = List(
     "jline"                        % "jline"                      % jline      )
@@ -89,7 +87,6 @@ lazy val formulas = project
 lazy val characters = project
   .settings(name := "ff7-characters")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.characters)
   .dependsOn(equipment)
 
 lazy val console = project

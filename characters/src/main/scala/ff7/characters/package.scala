@@ -19,9 +19,7 @@ package ff7
 import stats._
 import weapons._
 
-import scalaz.{Monoid ⇒ MonoidZ}
 import scalaz.Maybe._
-import spire.algebra.Monoid
 
 
 package object characters {
@@ -84,7 +82,4 @@ package object characters {
     just(busterSword),
     empty
   )
-
-  implicit def fromSpire[A](implicit A: Monoid[A]): MonoidZ[A] =
-    MonoidZ.instance((x, y) ⇒ A.op(x, y), A.id)
 }

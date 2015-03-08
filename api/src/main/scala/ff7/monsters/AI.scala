@@ -15,7 +15,7 @@
  */
 
 package ff7
-package simulation
+package monsters
 
 import algebra.Interact
 import battle.{Team, BattleAttack}

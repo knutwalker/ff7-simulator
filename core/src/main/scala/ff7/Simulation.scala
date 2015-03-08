@@ -19,7 +19,6 @@ package ff7
 import algebra.Interact, Interact._
 import battle._
 import monsters._
-import simulation._
 
 import scalaz._
 import Scalaz._

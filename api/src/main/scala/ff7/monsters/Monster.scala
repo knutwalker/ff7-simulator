@@ -15,7 +15,7 @@
  */
 
 package ff7
-package simulation
+package monsters
 
 import algebra._
 import algebra.Interact._

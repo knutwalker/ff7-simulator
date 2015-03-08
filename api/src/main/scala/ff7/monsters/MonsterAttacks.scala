@@ -15,7 +15,7 @@
  */
 
 package ff7
-package simulation
+package monsters
 
 import battle._
 import stats._
