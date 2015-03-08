@@ -42,7 +42,7 @@ package object reactor1 {
         else
           AI.choose(1, 6, tonfa, machineGun)
     }
-    Monsters.mp.copy(ai = ai)
+    Monsters.mp.get.copy(ai = ai)
   }
 
   val guardHound = {
@@ -53,7 +53,7 @@ package object reactor1 {
       def attack = AI.choose(1, 3, tentacle, bite)
       override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
     }
-    Monsters.guardHound.copy(ai = ai)
+    Monsters.guardHound.get.copy(ai = ai)
   }
 
   val monoDrive = {
@@ -66,7 +66,7 @@ package object reactor1 {
         Predef.???
       }
     }
-    Monsters.monoDrive.copy(ai = ai)
+    Monsters.monoDrive.get.copy(ai = ai)
   }
 
   val grunt = {
@@ -80,7 +80,7 @@ package object reactor1 {
         AI.choose(1, 12, handClaw, beamGun)
       }
     }
-    Monsters.grunt.copy(ai = ai)
+    Monsters.grunt.get.copy(ai = ai)
   }
 
   val firstRay = {
@@ -97,7 +97,7 @@ package object reactor1 {
       }
       def attack = laserCannon
     }
-    Monsters.firstRay.copy(ai = ai)
+    Monsters.firstRay.get.copy(ai = ai)
   }
 
   val sweeper = {
@@ -134,6 +134,6 @@ package object reactor1 {
       def apply(self: Monster, targets: Team): Interact[BattleAttack] =
         throw new IllegalStateException("setup routine did not run")
     }
-    Monsters.sweeper.copy(ai = ai)
+    Monsters.sweeper.get.copy(ai = ai)
   }
 }

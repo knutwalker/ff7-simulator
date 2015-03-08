@@ -16,6 +16,16 @@
 
 package ff7
 
+import algebra._
+import battle.{BattleAttack, Team}
+import characters.Character
+import monsters.{AI, Monster}
+import stats._
+import weapons.Weapons
+
+import scalaz.Maybe._
+
+import com.typesafe.config.{ConfigObject, ConfigValue}
 import spire.math.Rational
 
 import Predef.augmentString
@@ -24,6 +34,7 @@ import util.{Failure, Success, Try}
 trait Caster[A] {
   def safeCast(x: AnyRef): Try[A]
   def unsafeCast(x: AnyRef): A = safeCast(x).get
+  def cast(v: ConfigValue): Try[A] = safeCast(v.unwrapped())
 }
 object Caster extends LowerPriorityImplicits {
   implicit val string: Caster[String] = new Caster[String] {
@@ -50,6 +61,120 @@ object Caster extends LowerPriorityImplicits {
         case Array(f) ⇒ Try(f.trim.toLong).map(Rational(_))
         case _        ⇒ Failure(new IllegalArgumentException(s"could not parse string $x to a Rational"))
       }
+    }
+  }
+  implicit val weapon: Caster[Weapon] = new Caster[Weapon] {
+    def safeCast(x: AnyRef): Try[Weapon] = Failure(new IllegalArgumentException("need to use cast"))
+    override def cast(ov: ConfigValue): Try[Weapon] = ov match {
+      case v: ConfigObject ⇒ for {
+        name ← v("name")[String]
+        power ← v("power")[Rational]
+        attack ← v("attack")[Int]
+        attackPercent ← v("attackpercent")[Int]
+        magicAttack ← v("magicattack")[Int]
+      } yield {
+        Weapon(
+          name,
+          Power(power),
+          Attack(attack),
+          AttackPercent(attackPercent),
+          MagicAttack(magicAttack)
+        )
+      }
+      case _ ⇒
+        Failure(new IllegalArgumentException("config value is no object"))
+    }
+  }
+
+  implicit val character: Caster[Character] = new Caster[Character] {
+    def safeCast(x: AnyRef): Try[Character] = Failure(new IllegalArgumentException("need to use cast"))
+    override def cast(ov: ConfigValue): Try[Character] = ov match {
+      case v: ConfigObject ⇒ for {
+        name ← v("name")[String]
+        level ← v("level")[Int]
+        hp ← v("hp")[Int]
+        mp ← v("mp")[Int]
+        strength ← v("strength")[Int]
+        dexterity <- v("dexterity")[Int]
+        vitality ← v("vitality")[Int]
+        magic <- v("magic")[Int]
+        spirit ← v("spirit")[Int]
+        luck <- v("luck")[Int]
+        xp ← v("xp").apply[Int]
+      } yield {
+        val weapon = for {
+          w1 ← Option(v("weapon"))
+          w2 ← w1[String].toOption
+          w3 ← Weapons.selectDynamic(w2)
+        } yield w3
+        Character(
+          name,
+          Level(level),
+          HP(hp),
+          HP(hp),
+          MP(mp),
+          MP(mp),
+          Strength(strength),
+          Dexterity(dexterity),
+          Vitality(vitality),
+          Magic(magic),
+          Spirit(spirit),
+          Luck(luck),
+          XP(xp),
+          fromOption(weapon),
+          empty
+        )
+      }
+      case _ ⇒
+        Failure(new IllegalArgumentException("config value is no object"))
+    }
+  }
+
+  implicit val monster: Caster[Monster] = new Caster[Monster] {
+    def safeCast(x: AnyRef): Try[Monster] = Failure(new IllegalArgumentException("need to use cast"))
+    override def cast(ov: ConfigValue): Try[Monster] = ov match {
+      case v: ConfigObject ⇒ for {
+        name ← v("name")[String]
+        level ← v("level")[Int]
+        hp ← v("hp")[Int]
+        mp ← v("mp")[Int]
+        dexterity <- v("dexterity")[Int]
+        luck <- v("luck")[Int]
+        attack ← v("attack")[Int]
+        defense ← v("defense")[Int]
+        defensePercent ← v("defensepercent")[Int]
+        magicAttack ← v("magicattack")[Int]
+        magicDefense ← v("magicdefense")[Int]
+        xp ← v("xp").apply[Int]
+      } yield {
+        Monster(
+          name,
+          Level(level),
+          XP(xp),
+          HP(hp),
+          HP(hp),
+          MP(mp),
+          MP(mp),
+          Attack(attack),
+          Defense(defense),
+          DefensePercent(defensePercent),
+          Dexterity(dexterity),
+          MagicAttack(magicAttack),
+          MagicDefense(magicDefense),
+          Luck(luck),
+          DummyAi
+        )
+      }
+      case _ ⇒
+        Failure(new IllegalArgumentException("config value is no object"))
+    }
+
+    private object DummyAi extends AI {
+      def setup(self: Monster): Interact[Monster] =
+        Interact.unit(self)
+
+      def apply(self: Monster, targets: Team): Interact[BattleAttack] =
+        Interact.unit(BattleAttack.none)
     }
   }
 }

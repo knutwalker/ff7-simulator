@@ -33,7 +33,7 @@ import util.Try
 object Main extends SafeApp {
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
-  val party = Team(Characters.cloud2, Characters.barret)
+  val party = Team(Characters.cloud2.get, Characters.barret.get)
   val enemies = Team(sweeper.copy(name = "Sweeper A"), sweeper.copy(name = "Sweeper B"))
 
   def program(field: BattleField) = for {

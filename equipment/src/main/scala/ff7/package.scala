@@ -21,6 +21,8 @@ import scalaz.NonEmptyList
 
 import com.typesafe.config.{ConfigObject, ConfigValue}
 
+import util.Try
+
 
 package object ff7 {
   type TeamF[x] = Team
@@ -43,7 +45,7 @@ package object ff7 {
   }
 
   implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
-    def apply[T](implicit T: Caster[T]): T = T.unsafeCast(v.unwrapped())
+    def apply[T](implicit T: Caster[T]): Try[T] = T.cast(v)
   }
 
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
