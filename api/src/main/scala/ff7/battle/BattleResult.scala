@@ -17,17 +17,17 @@
 package ff7
 package battle
 
-import stats._
-
 sealed trait BattleResult
 object BattleResult {
 
   val aborted: BattleResult = Aborted
+  val undo: BattleResult = Undo
   val none: BattleResult = None
   def apply(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit): BattleResult =
     Attack(originalAttacker, attacker, target, hit)
 
   case object Aborted extends BattleResult
+  case object Undo extends BattleResult
   case object None extends BattleResult
   final case class Attack(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit) extends BattleResult
 }

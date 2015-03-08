@@ -58,9 +58,9 @@ final case class Character(
   val chosenAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)
 
-  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack] = {
+  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
     list.toNel(opponents.alivesInOrder)
-      .fold(unit(BattleAttack.none))(Character.selectPerson(this, allies))
+      .fold(Character.noAttack)(Character.selectPerson(this, allies))
   }
 
   def hit(h: Hit): Person = h match {
@@ -78,21 +78,26 @@ final case class Character(
 
 }
 object Character {
-  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[BattleAttack] = {
+
+  private def noAttack: Interact[Input.Special \/ BattleAttack] =
+    unit(\/.right(BattleAttack.none))
+
+  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Input.Special \/ BattleAttack] = {
     val aliveAllies = allies.alivesInOrder
     val currentAttacker = aliveAllies.indexOf(a.asPerson)
-    printPersons(formatPersons(aliveAllies, currentAttacker), TeamId.Allies) >>
-    printString(s"$a: Choose your enemy") >>
-    readEnemy(persons).map { mp ⇒
-      mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
-    }
+    for {
+      _      ← printPersons(formatPersons(aliveAllies, currentAttacker), TeamId.Allies)
+      _      ← printString(s"$a: Choose your enemy")
+      result ← readEnemy(persons)
+    } yield result.map(t ⇒ BattleAttack(a, t.asTarget))
   }
 
-  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
+  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Input.Special \/ Person] = {
     val bounded = min(max(0, current), persons.size - 1)
     printEnemies(persons.list, bounded).flatMap {
-      case Input.Quit ⇒ unit(empty[Person])
-      case Input.Ok   ⇒ unit(just(persons.list(bounded)))
+      case Input.Quit ⇒ unit(\/.left(Input.Quit))
+      case Input.Undo ⇒ unit(\/.left(Input.Undo))
+      case Input.Ok   ⇒ unit(\/.right(persons.list(bounded)))
       case Input.Up   ⇒ readEnemy(persons, bounded - 1)
       case Input.Down ⇒ readEnemy(persons, bounded + 1)
       case _          ⇒ readEnemy(persons, bounded)

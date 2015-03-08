@@ -20,11 +20,12 @@ package algebra
 
 sealed trait Input
 object Input {
+  sealed trait Special
   case object Up extends Input
   case object Down extends Input
   case object Right extends Input
   case object Left extends Input
-  case object Quit extends Input
-  case object Undo extends Input
   case object Ok extends Input
+  case object Quit extends Input with Special
+  case object Undo extends Input with Special
 }

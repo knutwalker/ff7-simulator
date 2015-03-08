@@ -17,14 +17,16 @@
 package ff7
 package battle
 
-import algebra.Interact
+import algebra.{Input, Interact}
 import stats._
+
+import scalaz.\/
 
 trait Person {
   def name: String
   def hp: HP
   def mp: MP
   def asTarget: Target
-  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack]
+  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack]
   def hit(h: Hit): Person
 }

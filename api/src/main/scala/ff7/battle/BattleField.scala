@@ -17,13 +17,19 @@
 package ff7
 package battle
 
-final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
-  def isFinished: Boolean = aborted || (List(heroes, enemies) exists (_.persons forall (_.hp.x <= 0)))
-  def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
+final case class BattleField(heroes: Team, enemies: Team, round: Int, history: List[BattleField], aborted: Boolean, result: Option[BattleResult]) {
+  def isFinished: Boolean =
+    aborted || (List(heroes, enemies) exists (_.persons forall (_.hp.x <= 0)))
+
+  def round(br: BattleResult): BattleField =
+    copy(round = round + 1, history = copy(result = Some(br)) :: history)
+
+  def cycle: BattleField =
+    copy(heroes = heroes.cycle)
 
   override def toString: String = s"Battle [$heroes] vs [$enemies]"
 }
 object BattleField {
   def init(heroes: Team, enemies: Team): BattleField =
-    BattleField(heroes, enemies, 0, Vector(), aborted = false)
+    BattleField(heroes, enemies, 0, Nil, aborted = false, result = None)
 }

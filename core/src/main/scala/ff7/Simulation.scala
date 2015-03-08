@@ -16,7 +16,7 @@
 
 package ff7
 
-import algebra.Interact, Interact._
+import algebra.{Input, Interact}, Interact._
 import battle._
 import monsters._
 
@@ -27,42 +27,21 @@ object Simulation {
   type IOState[s, a] = StateT[Interact, s, a]
 
   def apply(field: BattleField): Interact[BattleField] =
-    playAllRoundsSSS.eval(field)
+    playAllRounds.eval(field)
 
-  private val chooseAttackerSSS: State[BattleField, Option[Person]] = State { (bf: BattleField) ⇒
-    (bf.copy(heroes = bf.heroes.cycle), bf.heroes.alive)
+  private val chooseAttacker: State[BattleField, Option[Person]] = State { (bf: BattleField) ⇒
+    (bf, bf.heroes.alive)
   }
 
-  private val runAttackSSS: StateT[Interact, BattleField, BattleResult] =
-    chooseAttackerSSS.mapK[Interact, BattleResult, BattleField] {
+  private val runAttack: StateT[Interact, BattleField, BattleResult] =
+    chooseAttacker.mapK[Interact, BattleResult, BattleField] {
       case (bf, Some(a)) ⇒ attack(a, bf.enemies, bf.heroes).map(b ⇒ (bf, b))
       case (bf, None)    ⇒ unit(BattleResult.none).map(b ⇒ (bf, b))
     }
 
-  private val playRoundSSS: StateT[Interact, BattleField, BattleField] = {
-    runAttackSSS.mapK[Interact, BattleField, BattleField] { _.flatMap {
-      case (bf, m@BattleResult.Attack(oa, a, t, h)) ⇒
-        val enemies = bf.enemies.updated(t.asPerson, t.asPerson.hit(h))
-        val heroes = bf.heroes.updated(oa, a.asPerson)
-        val b = bf.round(m).copy(heroes = enemies, enemies = heroes)
-        val msg = h match {
-          case Hit.Missed ⇒
-            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] but missed"
-          case Hit.Hits(x) ⇒
-            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit with $x damage"
-          case Hit.Critical(x) ⇒
-            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit critically with $x damage"
-        }
-        Interact.printString(msg) map (_ ⇒ (b, b))
-      case (bf, m@BattleResult.None)                                            ⇒
-        val b = bf.round(m)
-        val msg = "No attack happened"
-        Interact.printString(msg) map (_ ⇒ (b, b))
-      case (bf, m@BattleResult.Aborted)                                         ⇒
-        val b = bf.round(m).copy(aborted = true)
-        val msg = "Attack was aborted"
-        Interact.printString(msg) map (_ ⇒ (b, b))
-    }}
+  private val playRound: StateT[Interact, BattleField, BattleField] = {
+    runAttack.mapK[Interact, BattleField, BattleField](_
+      .flatMap((evaluateResult _).tupled).map(_.squared))
   }
 
   private val setupPerson: Person ⇒ Interact[Person] = {
@@ -85,15 +64,17 @@ object Simulation {
 
   private val battleMonad = MonadState[IOState, BattleField]
 
-  private val playAllRoundsSSS: StateT[Interact, BattleField, BattleField] = {
-    initiateRound >> battleMonad.iterateUntil(playRoundSSS)(_.isFinished)
+  private val playAllRounds: StateT[Interact, BattleField, BattleField] = {
+    initiateRound >> battleMonad.iterateUntil(playRound)(_.isFinished)
   }
 
   private def attack(attacker: Person, opponents: Team, allies: Team): Interact[BattleResult] = {
     attacker.chooseAttack(opponents, allies).flatMap {
-      case BattleAttack.Attack(x, t) ⇒ executeAttack(attacker, x, t)
-      case BattleAttack.None         ⇒ unit(BattleResult.none)
-      case BattleAttack.Abort        ⇒ unit(BattleResult.aborted)
+      case \/-(BattleAttack.Attack(x, t)) ⇒ executeAttack(attacker, x, t)
+      case \/-(BattleAttack.None)         ⇒ unit(BattleResult.none)
+      case \/-(BattleAttack.Abort)        ⇒ unit(BattleResult.aborted)
+      case -\/(Input.Quit)                ⇒ unit(BattleResult.aborted)
+      case -\/(Input.Undo)                ⇒ unit(BattleResult.undo)
     }
   }
 
@@ -103,5 +84,51 @@ object Simulation {
         random(formulas.Physical(attacker, target))
           .map(BattleResult(originalAttacker, attacker, target, _))
     }
+  }
+
+  private def evaluateResult(bf: BattleField, br: BattleResult): Interact[BattleField] = br match {
+    case BattleResult.Attack(oa, a, t, h) ⇒ evaluateAttack(bf, br, oa, a, t, h)
+    case BattleResult.None                ⇒ evaluateNoAttack(bf, br)
+    case BattleResult.Aborted             ⇒ evaluateAbort(bf, br)
+    case BattleResult.Undo                ⇒ evaluateUndo(bf, br)
+  }
+
+  private def evaluateAttack(bf: BattleField, br: BattleResult, oa: Person, a: Attacker, t: Target, h: Hit): Interact[BattleField] = {
+    val enemies = bf.enemies.updated(t.asPerson, t.asPerson.hit(h))
+    val heroes = bf.heroes.updated(oa, a.asPerson)
+    val b = bf.round(br).copy(heroes = enemies, enemies = heroes).cycle
+    val msg = h match {
+      case Hit.Missed ⇒
+        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] but missed"
+      case Hit.Hits(x) ⇒
+        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit with $x damage"
+      case Hit.Critical(x) ⇒
+        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit critically with $x damage"
+    }
+    Interact.printString(msg) >| b
+  }
+
+  private def evaluateNoAttack(bf: BattleField, br: BattleResult): Interact[BattleField] = {
+    val b = bf.round(br).cycle
+    val msg = "No attack happened"
+    Interact.printString(msg) >| b
+  }
+
+  private def evaluateAbort(bf: BattleField, br: BattleResult): Interact[BattleField] = {
+    val b = bf.round(br).copy(aborted = true)
+    val msg = "Attack was aborted"
+    Interact.printString(msg) >| b
+  }
+
+  private def evaluateUndo(bf: BattleField, br: BattleResult): Interact[BattleField] = bf match {
+    case BattleField(_, _, _, _ :: prev :: _, _, _) ⇒
+      val msg = "The last two attacks were undone"
+      Interact.printString(msg) >| prev
+    case BattleField(_, _, _, prev :: _, _, _) ⇒
+      val msg = "The last attack was undone"
+      Interact.printString(msg) >| prev
+    case _ ⇒
+      val msg = "An attack should have been undone, but there was no history yet"
+      Interact.printString(msg) >| bf
   }
 }

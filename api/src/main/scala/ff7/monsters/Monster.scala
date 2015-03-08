@@ -22,6 +22,8 @@ import algebra.Interact._
 import battle._
 import stats._
 
+import scalaz.\/
+
 final case class Monster(
   name: String,
   level: Level,
@@ -51,11 +53,12 @@ final case class Monster(
   val asTarget: Target = this
   val asPerson: Person = this
 
-  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack] = {
+  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
     val alive = opponents.alives
     alive.headOption
       .map(a ⇒ ai(this, opponents.copy(first = a, rest = alive.tail)))
       .getOrElse(unit(BattleAttack.None))
+      .map(\/.right)
   }
 
   def hit(h: Hit): Person = h match {
