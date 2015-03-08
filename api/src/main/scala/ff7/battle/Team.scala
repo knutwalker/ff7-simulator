@@ -17,12 +17,55 @@
 package ff7
 package battle
 
-final case class Team(first: Person, rest: List[Person]) {
+final case class Team(first: Person, rest: List[Person], originalStart: Option[Int]) {
+
   def persons: List[Person] = first :: rest
+
+  def inOrder: (Person, List[Person]) =
+    originalStart.fold((first, rest)) { idx ⇒
+      val inOrder = split(idx)
+      (inOrder.head, inOrder.tail)
+    }
+
+  def alivesInOrder: List[Person] =
+    originalStart.fold(alives) { idx ⇒
+      split(idx).filter(_.hp.x > 0)
+    }
+
+  private def split(idx: Int) = {
+    val (tail, init) = rest.splitAt(idx)
+    init ::: first :: tail ::: Nil
+  }
+
+  def alives: List[Person] = persons.filter(_.hp.x > 0)
+
+  def alive: Option[Person] = persons.find(_.hp.x > 0)
+
+  def cycle: Team =
+    if (rest.isEmpty) this
+    else {
+      val newStart = originalStart match {
+        case None ⇒ Some(0)
+        case Some(x) if x < (rest.length - 1) ⇒ Some(x + 1)
+        case _ ⇒ None
+      }
+      Team(rest.head, rest.tail ::: first :: Nil, newStart)
+    }
+
+  def updated(old: Person, updated: Person): Team = {
+    if (old == first) copy(first = updated)
+    else {
+      val idx = rest.indexOf(old)
+      if (idx == -1) this
+      else copy(rest = rest.updated(idx, updated))
+    }
+  }
+
+  override def toString = s"Team(${persons.mkString(", ")})"
 }
 object Team {
   def apply(person: Person, persons: Person*): Team =
-    Team(person, persons.toList)
+    Team(person, persons.toList, None)
 }
 
 //sealed trait RowPosition

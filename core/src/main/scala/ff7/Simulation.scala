@@ -28,17 +28,36 @@ import Maybe._
 import Scalaz._
 import std.list
 
-import com.nicta.rng.Rng
-
 import math.{max, min}
 
 object Simulation {
   type IOState[s, a] = StateT[Interact, s, a]
 
   def apply(field: BattleField): Interact[BattleField] =
-    playAllRounds.eval(field)
+    playAllRoundsSSS.eval(field)
 
-  private val battleMonad = MonadState[IOState, BattleField]
+  private val chooseAttackerSSS: State[BattleField, Option[Person]] = State { (bf: BattleField) ⇒
+    (bf.copy(heroes = bf.heroes.cycle), bf.heroes.alive)
+  }
+
+  private val runAttackSSS: StateT[Interact, BattleField, BattleResult] =
+    chooseAttackerSSS.mapK[Interact, BattleResult, BattleField] {
+      case (bf, Some(a)) ⇒ attack(a, bf.enemies).map(b ⇒ (bf, b))
+      case (bf, None)    ⇒ unit(BattleResult.none).map(b ⇒ (bf, b))
+    }
+
+  private val playRoundSSS: StateT[Interact, BattleField, BattleField] = {
+    runAttackSSS.mapK[Interact, BattleField, BattleField] { _.map {
+      case (bf, m@BattleResult.Attack(originalAttacker, attacker, target, hit)) ⇒
+        val enemies = bf.enemies.updated(target.asPerson, target.asPerson.hit(hit))
+        val heroes = bf.heroes.updated(originalAttacker, attacker.asPerson)
+        bf.round(m).copy(heroes = enemies, enemies = heroes)
+      case (bf, m@BattleResult.None)                                            ⇒
+        bf.round(m)
+      case (bf, m@BattleResult.Aborted)                                         ⇒
+        bf.round(m).copy(aborted = true)
+    }.map(_.squared) }
+  }
 
   private val setupPerson: Person ⇒ Interact[Person] = {
     case m: Monster ⇒ m.ai.setup(m).map(_.asPerson)
@@ -46,71 +65,42 @@ object Simulation {
   }
 
   private val initiateRound =
-    StateT[Interact, BattleField, BattleField] { b ⇒ for {
-      hs ← b.heroes.toNel.traverse(setupPerson)
-      es ← b.enemies.toNel.traverse(setupPerson)
-    } yield b.copy(heroes = hs.toTeam, enemies = es.toTeam).squared }
-
-  private val playRoundS =
-    StateT[Interact, BattleField, BattleField](b ⇒
-      playRound(b).map(_.squared))
-
-  private val playAllRounds =
-    initiateRound >> battleMonad.iterateUntil(playRoundS)(_.isFinished)
-
-  private def playRound(battle: BattleField): Interact[BattleField] =
-    runAttack(battle.heroes, battle.enemies) map {
-      case m@BattleResult.Attack(originalAttacker, attacker, target, hit) ⇒
-        val enemies = update(target.asPerson, _.hit(hit), battle.enemies)
-        val heroes = update(originalAttacker, _ ⇒ attacker.asPerson, battle.heroes)
-        battle.round(m).copy(enemies, heroes)
-      case m@BattleResult.None ⇒
-        battle.round(m)
-      case m@BattleResult.Aborted ⇒
-        battle.round(m).copy(aborted = true)
+    StateT[Interact, BattleField, BattleField] { b ⇒
+      val hsi = b.heroes.toNel.traverse[Interact, Person](setupPerson)
+      val esi = b.enemies.toNel.traverse[Interact, Person](setupPerson)
+      hsi.flatMap { hs ⇒
+        esi.map { es ⇒
+          val h = hs.toTeam.copy(originalStart = b.heroes.originalStart)
+          val e = es.toTeam.copy(originalStart = b.enemies.originalStart)
+          b.copy(heroes = h, enemies = e).squared
+        }
+      }
     }
 
-  private def runAttack(attackers: Team, opponents: Team): Interact[BattleResult] =
-    random(chooseAttacker(attackers, opponents)).flatMap {
-      case Just(a) ⇒ chooseAttackings(a, attackers, opponents)
-      case Empty() ⇒ unit(BattleResult.None)
-    }
+  private val battleMonad = MonadState[IOState, BattleField]
 
-  private def chooseAttacker(attackers: Team): Rng[Maybe[Person]] = {
-    chooseAlivePerson(attackers)
+  private val playAllRoundsSSS: StateT[Interact, BattleField, BattleField] = {
+    initiateRound >> battleMonad.iterateUntil(playRoundSSS)(_.isFinished)
   }
 
-
-  private def alivePersons(team: Team): List[Person] = {
-    team.persons.filter(_.hp.x > 0)
-  }
-
-  private def chooseAlivePerson(team: Team): Rng[Maybe[Person]] = {
-    val alive = alivePersons(team)
-    if (alive.isEmpty) Rng.insert(empty)
-    else if (alive.tail.isEmpty)
-      Rng.insert(just(alive.head))
-    else
-      Rng.oneofL(NonEmptyList.nel(alive.head, alive.tail)).map(just)
-  }
-
-  private def attack(attacker: Person, attackers: Team, opponents: Team): Interact[BattleResult] = {
-    chooseAttack(attacker, attackers, opponents).flatMap {
+  private def attack(attacker: Person, opponents: Team): Interact[BattleResult] = {
+    chooseAttack(attacker, opponents).flatMap {
       case BattleAttack.Attack(x, t) ⇒ executeAttack(attacker, x, t)
       case BattleAttack.None         ⇒ unit(BattleResult.none)
       case BattleAttack.Abort        ⇒ unit(BattleResult.aborted)
     }
   }
 
+  private def chooseAttack(attacker: Person, opponents: Team): Interact[BattleAttack] = {
     attacker match {
       case c: Character ⇒
-        list.toNel(alivePersons(opponents))
+        list.toNel(opponents.alivesInOrder)
           .fold(unit(BattleAttack.none))(selectPerson(c))
 
       case m: Monster ⇒
-        val alive = opponents.persons.filter(_.hp.x > 0)
+        val alive = opponents.alives
         alive.headOption
-          .map(a ⇒ m.ai(m, attackers, Team(a, alive.tail)))
+          .map(a ⇒ m.ai(m, opponents.copy(first = a, rest = alive.tail)))
           .getOrElse(unit(BattleAttack.None))
     }
   }
@@ -148,15 +138,5 @@ object Simulation {
         random(formulas.Physical(attacker, target))
           .map(BattleResult(originalAttacker, attacker, target, _))
     }
-  }
-
-  private def update(p: Person, f: Person ⇒ Person, team: Team): Team = {
-    val persons = team.persons
-    val idx = {
-      val i = persons.indexOf(p)
-      if (i == -1) None else Some(i)
-    }
-    val newPersons = idx.fold(persons)(i ⇒ persons.updated(i, f(p)))
-    Team(newPersons.head, newPersons.tail)
   }
 }

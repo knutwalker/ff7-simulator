@@ -42,7 +42,7 @@ package object characters {
 
   val cloud2 = Character("Cloud",
     Level(7),
-    HP(302), HP(316),
+    HP(316), HP(316),
     MP(54), MP(57),
     Strength(19),
     Dexterity(9),

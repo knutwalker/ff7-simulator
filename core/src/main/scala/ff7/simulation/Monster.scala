@@ -48,6 +48,7 @@ final case class Monster(
 
   val asTarget: Target = this
   val asPerson: Person = this
+
   def hit(h: Hit): Person = h match {
     case Hit.Missed      ⇒ this
     case Hit.Hits(c)     ⇒ copy(hp = HP(hp.x - c))

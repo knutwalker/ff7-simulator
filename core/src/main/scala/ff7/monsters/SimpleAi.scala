@@ -29,7 +29,7 @@ trait SimpleAi extends AI {
   def target(targets: Team): Rng[Person] = Rng.oneofL(targets.toNel)
   def modify(self: Monster): Monster = self
 
-  final def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
+  final def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
     val tar = target(targets)
     val att = attack(self)
     val mon = modify(self)

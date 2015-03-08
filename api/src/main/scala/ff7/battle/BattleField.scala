@@ -20,6 +20,8 @@ package battle
 final case class BattleField(heroes: Team, enemies: Team, round: Int, history: Vector[BattleResult], aborted: Boolean) {
   def isFinished: Boolean = aborted || (List(heroes, enemies) exists (_.persons forall (_.hp.x <= 0)))
   def round(br: BattleResult): BattleField = copy(round = round + 1, history = history :+ br)
+
+  override def toString: String = s"Battle [$heroes] vs [$enemies]"
 }
 object BattleField {
   def init(heroes: Team, enemies: Team): BattleField =

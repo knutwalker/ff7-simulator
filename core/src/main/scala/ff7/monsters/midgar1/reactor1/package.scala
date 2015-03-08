@@ -89,7 +89,7 @@ package object reactor1 {
       power = Power(Rational(1, 2)), cost = some(MP(4)))
     object ai extends AI {
       def setup(self: Monster): Interact[Monster] = ???
-      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] = {
+      def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
         ???
       }
     }
@@ -197,7 +197,7 @@ package object reactor1 {
           case 1 ⇒ self.copy(ai = state2)
           case _ ⇒ self.copy(ai = state3)
         })
-      def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack] =
+      def apply(self: Monster, targets: Team): Interact[BattleAttack] =
         throw new IllegalStateException("setup routine did not run")
     }
     Monster("Sweeper",

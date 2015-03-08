@@ -25,7 +25,7 @@ import spire.math.Rational
 
 trait AI extends {
   def setup(self: Monster): Interact[Monster]
-  def apply(self: Monster, heroes: Team, targets: Team): Interact[BattleAttack]
+  def apply(self: Monster, targets: Team): Interact[BattleAttack]
 }
 object AI {
   def choose[A](num: Long, denom: Long, ifHit: ⇒ A, ifMiss: ⇒ A): Rng[A] =

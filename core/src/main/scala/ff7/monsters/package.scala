@@ -27,8 +27,11 @@ package object monsters {
 
   val teamNelIso: Team <=> NonEmptyList[Person] =
     new (Team <=> NonEmptyList[Person]) {
-      val to: (Team) ⇒ NonEmptyList[Person] = t ⇒ NonEmptyList.nel(t.first, t.rest)
-      val from: (NonEmptyList[Person]) ⇒ Team = nel ⇒ Team(nel.head, nel.tail)
+      val to: (Team) ⇒ NonEmptyList[Person] = t ⇒ {
+        val (first, rest) = t.inOrder
+        NonEmptyList.nel(first, rest)
+      }
+      val from: (NonEmptyList[Person]) ⇒ Team = nel ⇒ Team(nel.head, nel.tail, None)
     }
 
   implicit class NelTeam(val t: Team) extends AnyVal {
