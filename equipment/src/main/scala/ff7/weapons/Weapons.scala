@@ -25,11 +25,9 @@ import spire.math.Rational
 import collection.JavaConverters._
 import collection.immutable
 import scala.language.dynamics
-import util.Try
 
 
 object Weapons extends Dynamic {
-  import Predef.augmentString
 
   private[ff7] val config = ConfigFactory.load()
 
@@ -42,18 +40,10 @@ object Weapons extends Dynamic {
     }
   }
 
-  private def weaponFromConf(v: ConfigObject) = {
-    val powerValue = v("power")
-    val power: Rational = Try(powerValue[Int])
-      .toOption
-      .map(Rational(_))
-      .getOrElse {
-        val Array(num, den) = powerValue[String].split('/')
-        Rational(num.trim.toLong, den.trim.toLong)
-    }
+  private def weaponFromConf(v: ConfigObject): Weapon = {
     Weapon(
       v("name")[String],
-      Power(power),
+      Power(v("power")[Rational]),
       Attack(v("attack")[Int]),
       AttackPercent(v("attackpercent")[Int]),
       MagicAttack(v("magicattack")[Int])

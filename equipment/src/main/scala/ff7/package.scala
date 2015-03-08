@@ -43,7 +43,7 @@ package object ff7 {
   }
 
   implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
-    def apply[T]: T = v.unwrapped().asInstanceOf[T]
+    def apply[T](implicit T: Caster[T]): T = T.unsafeCast(v.unwrapped())
   }
 
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
