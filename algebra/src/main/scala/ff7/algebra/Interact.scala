@@ -39,6 +39,21 @@ object Interact {
   def readInput: Interact[Input] =
     Free.liftFC(ReadInput)
 
+  def log(s: String, l: LogLevel, ex: Option[Throwable]): Interact[Unit] =
+    Free.liftFC(Log(s, l, ex))
+
+  def debug(s: String): Interact[Unit] =
+    log(s, LogLevel.Debug, None)
+
+  def info(s: String): Interact[Unit] =
+    log(s, LogLevel.Info, None)
+
+  def warn(s: String): Interact[Unit] =
+    log(s, LogLevel.Warn, None)
+
+  def error(s: String, ex: Throwable): Interact[Unit] =
+    log(s, LogLevel.Error, Some(ex))
+
   def unit[A](a: A): Interact[A] =
     Free.point[InteractMonad, A](a)
 

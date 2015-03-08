@@ -16,8 +16,7 @@
 
 package ff7
 
-import algebra.Interact.printString
-import algebra._
+import algebra._, LogLevel._, Interact._
 import battle.{BattleField, Team}
 import characters.Characters
 import monsters.midgar1.reactor1._
@@ -39,9 +38,11 @@ object Main extends SafeApp {
   val field = BattleField.init(party, enemies)
 
   lazy val program = for {
+    _      ← debug("Starting simulation")
     _      ← printString(s"Starting a new round with $field")
     result ← Simulation(field)
     _      ← printString(s"Finished round after ${result.history.size} turns")
+    _      ← debug("Simulation finished")
   } yield result
 
   override def runl(args: List[String]): IO[Unit] = {
@@ -54,7 +55,7 @@ object Main extends SafeApp {
 
   def runRound(ui: UI): IO[Unit] = {
     import ui.interpreter
-    log("Starting simulation") >> Interact.run(program) >> log("Simulation finished")
+    Interact.run(program).void
   }
 
   private def parseOpts(args: List[String]): Options =
@@ -68,10 +69,6 @@ object Main extends SafeApp {
         .getOrElse(opts)
     }
 
-  private def log(x: ⇒ String): IO[Unit] = {
-    IO(logger.info(x))
-  }
-
   case class Options(repetitions: Int, ui: UI)
 
   sealed trait UI {
@@ -82,17 +79,28 @@ object Main extends SafeApp {
   case object Console extends UI {
     def start: IO[Unit] = IO(())
     def stop: IO[Unit] = IO(())
-    implicit val interpreter: InteractOp ~> IO = console.ConsoleInterpreter
+    implicit val interpreter: InteractOp ~> IO =
+      LoggingInterpreter(logger, logPrints = false, console.ConsoleInterpreter)
   }
   case object GUI extends UI {
     def start: IO[Unit] = IO(gui.start())
     def stop: IO[Unit] = IO(gui.stop())
-    implicit val interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
-      private val delegate = gui.GuiInterpreter
-      def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-        case PrintString(s)      ⇒ log(s) >> delegate(fa)
-        case _                   ⇒ delegate(fa)
-      }
+    implicit val interpreter: InteractOp ~> IO =
+      LoggingInterpreter(logger, logPrints = true, gui.GuiInterpreter)
+  }
+
+  def LoggingInterpreter(log: Logger, logPrints: Boolean, delegate: InteractOp ~> IO) = new (InteractOp ~> IO) {
+    def apply[A](fa: InteractOp[A]): IO[A] = fa match {
+      case Log(x, Debug, Some(ex))     ⇒ IO(log.debug(x, ex))
+      case Log(x, Debug, None)         ⇒ IO(log.debug(x))
+      case Log(x, Info, Some(ex))      ⇒ IO(log.info(x, ex))
+      case Log(x, Info, None)          ⇒ IO(log.info(x))
+      case Log(x, Warn, Some(ex))      ⇒ IO(log.warn(x, ex))
+      case Log(x, Warn, None)          ⇒ IO(log.warn(x))
+      case Log(x, Error, Some(ex))     ⇒ IO(log.error(x, ex))
+      case Log(x, Error, None)         ⇒ IO(log.error(x))
+      case PrintString(s) if logPrints ⇒ IO(log.info(s)) >> delegate(fa)
+      case _                           ⇒ delegate(fa)
     }
   }
 }

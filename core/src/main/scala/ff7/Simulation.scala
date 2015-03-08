@@ -53,12 +53,13 @@ object Simulation {
     StateT[Interact, BattleField, BattleField] { b ⇒
       val hsi = b.heroes.toNel.traverse[Interact, Person](setupPerson)
       val esi = b.enemies.toNel.traverse[Interact, Person](setupPerson)
-      hsi.flatMap { hs ⇒
-        esi.map { es ⇒
-          val h = hs.toTeam.copy(originalStart = b.heroes.originalStart)
-          val e = es.toTeam.copy(originalStart = b.enemies.originalStart)
-          b.copy(heroes = h, enemies = e).squared
-        }
+      for {
+        hs ← hsi
+        es ← esi
+      } yield {
+        val h = hs.toTeam.copy(originalStart = b.heroes.originalStart)
+        val e = es.toTeam.copy(originalStart = b.enemies.originalStart)
+        b.copy(heroes = h, enemies = e).squared
       }
     }
 

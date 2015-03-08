@@ -41,6 +41,7 @@ package object gui {
       case PrintString(s)       ⇒ printsString(s)
       case Random(rng)          ⇒ rng.run
       case ReadInput            ⇒ readsInput
+      case Log(_, _, _)         ⇒ IO(())
     }
   }
 

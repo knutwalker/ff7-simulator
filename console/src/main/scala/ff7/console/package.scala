@@ -30,6 +30,7 @@ package object console {
       case PrintString(s)      ⇒ IO.putStrLn(s)
       case Random(rng)         ⇒ rng.run
       case ReadInput           ⇒ readInput
+      case Log(_, _, _)        ⇒ IO(())
     }
   }
 

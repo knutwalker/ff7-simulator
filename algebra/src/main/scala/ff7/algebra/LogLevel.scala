@@ -14,19 +14,12 @@
  * limitations under the License.
  */
 
-package ff7
-package algebra
+package ff7.algebra
 
-import com.nicta.rng.Rng
-
-
-sealed trait                                InteractOp[A]
-case class  PrintString(s: String)  extends InteractOp[Unit]
-case class  Random[A](rng: Rng[A])  extends InteractOp[A]
-case object ReadInput               extends InteractOp[Input]
-case class  PrintPersons(
-  ps: List[UiItem], id: TeamId)     extends InteractOp[Unit]
-case class  Log(
-  x: String,
-  level: LogLevel,
-  ex: Option[Throwable])            extends InteractOp[Unit]
+sealed trait LogLevel
+object LogLevel {
+  case object Debug extends LogLevel
+  case object Info extends LogLevel
+  case object Warn extends LogLevel
+  case object Error extends LogLevel
+}
