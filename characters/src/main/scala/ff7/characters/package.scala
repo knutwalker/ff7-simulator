@@ -16,70 +16,23 @@
 
 package ff7
 
-import stats._
 import weapons._
 
 import scalaz.Maybe._
 
+import com.typesafe.config.{ConfigObject, ConfigValue}
+
 
 package object characters {
-  val cloud = Character("Cloud",
-    Level(6),
-    HP(302), HP(302),
-    MP(54), MP(56),
-    Strength(18),
-    Dexterity(6),
-    Vitality(16),
-    Magic(23),
-    Spirit(17),
-    Luck(14),
-    XP(610),
-    just(busterSword),
-    empty
-  )
 
-  val cloud2 = Character("Cloud",
-    Level(7),
-    HP(316), HP(316),
-    MP(54), MP(57),
-    Strength(19),
-    Dexterity(9),
-    Vitality(17),
-    Magic(26),
-    Spirit(18),
-    Luck(16),
-    XP(642),
-    just(busterSword),
-    empty
-  )
+  implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
+    def apply[T]: T = v.unwrapped().asInstanceOf[T]
+  }
 
-  val barret = Character("Barret",
-    Level(6),
-    HP(328), HP(328),
-    MP(43), MP(43),
-    Strength(19),
-    Dexterity(9),
-    Vitality(19),
-    Magic(18),
-    Spirit(14),
-    Luck(16),
-    XP(395),
-    just(gatlingGun),
-    empty
-  )
+  implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
+    def apply(key: String): ConfigValue = v.get(key)
+  }
 
-  val cloud0 = Character("Cloud",
-    Level(6),
-    HP(314), HP(314),
-    MP(54), MP(54),
-    Strength(20),
-    Dexterity(16),
-    Vitality(19),
-    Magic(17),
-    Spirit(6),
-    Luck(14),
-    XP(610),
-    just(busterSword),
-    empty
-  )
+  val  cloud = Characters.cloud2.copy(weapon = just(busterSword))
+  val barret = Characters.barret.copy(weapon = just(gatlingGun))
 }

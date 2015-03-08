@@ -30,11 +30,9 @@ import org.slf4j.LoggerFactory
 import util.Try
 
 object Main extends SafeApp {
-  import Predef.augmentString
-
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
-  val party = Team(characters.cloud2, characters.barret)
+  val party = Team(characters.cloud, characters.barret)
   val enemies = Team(sweeper.copy(name = "Sweeper A"), sweeper.copy(name = "Sweeper B"))
   val field = BattleField.init(party, enemies)
 
@@ -45,7 +43,7 @@ object Main extends SafeApp {
 
   def parseOpts(args: List[String]): Options =
     args.foldLeft(Options(1, GUI)) { (opts, arg) ⇒
-      Try(arg.toInt).toOption
+      Try(java.lang.Integer.parseInt(arg)).toOption
         .map(r ⇒ opts.copy(repetitions = r))
         .orElse(Some(arg.toLowerCase).collect {
           case "console" ⇒ opts.copy(ui = Console)
@@ -93,11 +91,11 @@ object Main extends SafeApp {
   case object Console extends UI {
     def start: IO[Unit] = IO(())
     def stop: IO[Unit] = IO(())
-    implicit def interpreter: InteractOp ~> IO = console.ConsoleInterpreter
+    implicit val interpreter: InteractOp ~> IO = console.ConsoleInterpreter
   }
   case object GUI extends UI {
     def start: IO[Unit] = IO(gui.start())
     def stop: IO[Unit] = IO(gui.stop())
-    implicit def interpreter: InteractOp ~> IO = gui.GuiInterpreter
+    implicit val interpreter: InteractOp ~> IO = gui.GuiInterpreter
   }
 }

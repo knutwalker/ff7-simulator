@@ -9,19 +9,20 @@ import sbtrelease.ReleaseStateTransformations._
 import xerial.sbt.Sonatype.SonatypeKeys._
 
 lazy val versions = new {
-  val     scalaz = "7.1.1"
-  val        rng = "1.3.0"
-  val      spire = "0.9.1"
   val   argonaut = "6.1-M5"
-  val    monocle = "1.0.1"
+  val     config = "1.2.1"
   val      jline = "2.12.1"
-  val    logging = "3.1.0"
   val      log4j = "2.2"
+  val    logging = "3.1.0"
+  val    monocle = "1.0.1"
+  val        rng = "1.3.0"
   val    rxscala = "0.24.0"
   val    rxswing = "0.22.0"
+  val scalacheck = "1.12.2"
+  val     scalaz = "7.1.1"
   val  shapeless = "0.3"
   val     specs2 = "3.0"
-  val scalacheck = "1.12.2"
+  val      spire = "0.9.1"
   val      swing = "1.0.1"
   val transducer = "0.2.0"
   val  zForSpecs = "0.3.0"
@@ -39,6 +40,9 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
+
+  val content = List(
+    "com.typesafe"                 % "config"                     % config     )
 
   val console = List(
     "jline"                        % "jline"                      % jline      )
@@ -88,11 +92,13 @@ lazy val formulas = project
 lazy val characters = project
   .settings(name := "ff7-characters")
   .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.content)
   .dependsOn(equipment)
 
 lazy val monsters = project
   .settings(name := "ff7-monsters")
   .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.content)
   .dependsOn(api)
 
 lazy val console = project
