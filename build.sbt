@@ -89,6 +89,11 @@ lazy val characters = project
   .settings(ff7Settings: _*)
   .dependsOn(equipment)
 
+lazy val monsters = project
+  .settings(name := "ff7-monsters")
+  .settings(ff7Settings: _*)
+  .dependsOn(api)
+
 lazy val console = project
   .settings(name := "ff7-console")
   .settings(ff7Settings: _*)
@@ -105,7 +110,7 @@ lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(characters, console, equipment, formulas, gui)
+  .dependsOn(characters, console, formulas, gui, monsters)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -118,8 +123,8 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, tests)
-  .aggregate(algebra, api, characters, console, core, equipment, formulas, gui, tests)
+  .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
+  .aggregate(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
 
 // =================================
 
