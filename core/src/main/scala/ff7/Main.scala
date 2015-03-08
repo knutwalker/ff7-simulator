@@ -87,6 +87,12 @@ object Main extends SafeApp {
   case object GUI extends UI {
     def start: IO[Unit] = IO(gui.start())
     def stop: IO[Unit] = IO(gui.stop())
-    implicit val interpreter: InteractOp ~> IO = gui.GuiInterpreter
+    implicit val interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
+      private val delegate = gui.GuiInterpreter
+      def apply[A](fa: InteractOp[A]): IO[A] = fa match {
+        case PrintString(s)      ⇒ log(s) >> delegate(fa)
+        case _                   ⇒ delegate(fa)
+      }
+    }
   }
 }
