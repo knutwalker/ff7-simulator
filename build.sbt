@@ -1,6 +1,7 @@
 import com.typesafe.sbt.pgp.PgpKeys._
 import sbt._
 import sbt.Keys._
+import sbtassembly.AssemblyPlugin.defaultShellScript
 import sbtrelease._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
@@ -125,6 +126,10 @@ lazy val parent = project.in(file("."))
   .settings(doNotPublish: _*)
   .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
   .aggregate(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
+  .settings(
+    aggregate in dependencySvgView := false,
+    aggregate in          assembly := false
+  )
 
 // =================================
 
@@ -132,6 +137,7 @@ lazy val javaVersion = SettingKey[String]("Java Version")
 lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
 lazy val projectMaintainer = SettingKey[String]("Maintainer")
+lazy val buildFatJar = SettingKey[Boolean]("true builds a fat jar, false builds only an assembled jar sans dependencies")
 
 lazy val buildSettings = List(
         organization := "de.knutwalker",
@@ -139,7 +145,8 @@ lazy val buildSettings = List(
           githubUser := "knutwalker",
           githubRepo := "ff7-simulator",
         scalaVersion := "2.11.6",
-         javaVersion := "1.8"
+         javaVersion := "1.8",
+         buildFatJar := true
 )
 
 lazy val commonSettings = List(
@@ -276,10 +283,18 @@ lazy val buildInfos = buildInfoSettings ++ List(
 )
 
 lazy val buildsUberJar = List(
-        assemblyJarName in assembly := s"${name.value}_${scalaBinaryVersion.value}-${version.value}.jar",
-     assemblyOutputPath in assembly := (baseDirectory in parent).value / (assemblyJarName in assembly).value,
-         assemblyOption in assembly ~= { _.copy(includeScala = false) }
+     assemblyJarName in assembly := { if (buildFatJar.value) s"${name.value}" else s"${name.value}_${version.value}.jar" },
+  assemblyOutputPath in assembly := baseDirectory.value / (assemblyJarName in assembly).value,
+           mainClass in assembly := Some("ff7.Main"),
+                test in assembly := {},
+      assemblyOption in assembly := {
+        val opts = (assemblyOption in assembly).value
+          .copy(prependShellScript = Some(defaultShellScript))
+        if (!buildFatJar.value)
+          opts.copy(includeScala = false, includeDependency = false)
+        else opts
+      }
 )
 
 lazy val ff7Settings =
-  buildSettings ++ commonSettings ++ publishSettings ++ releaseSettings ++ headerSettings
+  buildSettings ++ commonSettings ++ publishSettings ++ releaseSettings ++ headerSettings ++ buildsUberJar

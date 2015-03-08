@@ -139,3 +139,5 @@ project/*-shim.sbt
 project/project/
 project/target/
 
+core/ff7
+ff7-parent
