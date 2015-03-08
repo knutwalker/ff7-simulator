@@ -21,6 +21,8 @@ import battle.{Team, Person}
 import scalaz.Isomorphism._
 import scalaz.NonEmptyList
 
+import com.typesafe.config.{ConfigObject, ConfigValue}
+
 package object monsters {
 
   type TeamF[x] = Team
@@ -40,5 +42,13 @@ package object monsters {
 
   implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
     def toTeam: Team = teamNelIso.from(ps)
+  }
+
+  implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
+    def apply[T]: T = v.unwrapped().asInstanceOf[T]
+  }
+
+  implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
+    def apply(key: String): ConfigValue = v.get(key)
   }
 }

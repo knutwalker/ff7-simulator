@@ -20,7 +20,7 @@ package midgar1
 
 import algebra._
 import battle.{Team, MonsterAttack, BattleAttack}
-import stats._
+import stats.{Power, AttackPercent, MP}
 
 import scalaz._
 import Scalaz._
@@ -31,7 +31,7 @@ import spire.math.Rational
 
 package object reactor1 {
 
-  val mp = {
+  val Mp = {
     val machineGun = MonsterAttack.physical("Machine Gun")
     val tonfa = MonsterAttack.physical("Tonfa",
       AttackPercent(85), Power(Rational(3, 2)))
@@ -42,20 +42,7 @@ package object reactor1 {
         else
           AI.choose(1, 6, tonfa, machineGun)
     }
-    Monster("MP",
-      Level(2),
-      XP(16),
-      HP(30), HP(30),
-      MP(0), MP(0),
-      Attack(6),
-      Defense(4),
-      DefensePercent(0),
-      Dexterity(50),
-      MagicAttack(0),
-      MagicDefense(0),
-      Luck(4),
-      ai
-    )
+    Monsters.mp.copy(ai = ai)
   }
 
   val guardHound = {
@@ -66,20 +53,7 @@ package object reactor1 {
       def attack = AI.choose(1, 3, tentacle, bite)
       override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
     }
-    Monster("Guard Hound",
-      Level(3),
-      XP(20),
-      HP(42), HP(42),
-      MP(0), MP(0),
-      Attack(8),
-      Defense(4),
-      DefensePercent(6),
-      Dexterity(64),
-      MagicAttack(2),
-      MagicDefense(2),
-      Luck(6),
-      ai
-    )
+    Monsters.guardHound.copy(ai = ai)
   }
 
   val monoDrive = {
@@ -92,20 +66,7 @@ package object reactor1 {
         Predef.???
       }
     }
-    Monster("Mono Drive",
-      Level(2),
-      XP(18),
-      HP(28), HP(28),
-      MP(28), MP(28),
-      Attack(3),
-      Defense(6),
-      DefensePercent(6),
-      Dexterity(49),
-      MagicAttack(3),
-      MagicDefense(4),
-      Luck(2),
-      ai
-    )
+    Monsters.monoDrive.copy(ai = ai)
   }
 
   val grunt = {
@@ -119,20 +80,7 @@ package object reactor1 {
         AI.choose(1, 12, handClaw, beamGun)
       }
     }
-    Monster("Grunt",
-      Level(7),
-      XP(22),
-      HP(40), HP(40),
-      MP(0), MP(0),
-      Attack(12),
-      Defense(10),
-      DefensePercent(4),
-      Dexterity(58),
-      MagicAttack(2),
-      MagicDefense(2),
-      Luck(8),
-      ai
-    )
+    Monsters.grunt.copy(ai = ai)
   }
 
   val firstRay = {
@@ -149,20 +97,7 @@ package object reactor1 {
       }
       def attack = laserCannon
     }
-    Monster("1st Ray",
-      Level(4),
-      XP(12),
-      HP(18), HP(18),
-      MP(0), MP(0),
-      Attack(10),
-      Defense(2),
-      DefensePercent(0),
-      Dexterity(40),
-      MagicAttack(0),
-      MagicDefense(0),
-      Luck(0),
-      ai
-    )
+    Monsters.firstRay.copy(ai = ai)
   }
 
   val sweeper = {
@@ -199,19 +134,6 @@ package object reactor1 {
       def apply(self: Monster, targets: Team): Interact[BattleAttack] =
         throw new IllegalStateException("setup routine did not run")
     }
-    Monster("Sweeper",
-      Level(8),
-      XP(27),
-      HP(140), HP(140),
-      MP(0), MP(0),
-      Attack(18),
-      Defense(20),
-      DefensePercent(0),
-      Dexterity(48),
-      MagicAttack(0),
-      MagicDefense(4),
-      Luck(1),
-      ai
-    )
+    Monsters.sweeper.copy(ai = ai)
   }
 }
