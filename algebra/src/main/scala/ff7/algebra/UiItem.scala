@@ -17,12 +17,4 @@
 package ff7
 package algebra
 
-import com.nicta.rng.Rng
-
-
-sealed trait                                InteractOp[A]
-case class  PrintString(s: String)  extends InteractOp[Unit]
-case class  Random[A](rng: Rng[A])  extends InteractOp[A]
-case object ReadInput               extends InteractOp[Input]
-case class  PrintPersons(
-  ps: List[UiItem], id: TeamId)     extends InteractOp[Unit]
+case class UiItem(text: String, active: Boolean)

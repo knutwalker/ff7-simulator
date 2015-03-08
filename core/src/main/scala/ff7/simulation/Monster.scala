@@ -51,7 +51,7 @@ final case class Monster(
   val asTarget: Target = this
   val asPerson: Person = this
 
-  def chooseAttack(opponents: Team): Interact[BattleAttack] = {
+  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack] = {
     val alive = opponents.alives
     alive.headOption
       .map(a ⇒ ai(this, opponents.copy(first = a, rest = alive.tail)))

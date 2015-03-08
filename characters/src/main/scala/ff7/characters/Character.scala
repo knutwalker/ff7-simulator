@@ -17,7 +17,7 @@
 package ff7
 package characters
 
-import algebra.{OutPerson, Input, Interact}
+import algebra.{TeamId, UiItem, Input, Interact}
 import algebra.Interact._
 import battle._
 import stats._
@@ -58,9 +58,9 @@ final case class Character(
   val chosenAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)
 
-  def chooseAttack(opponents: Team): Interact[BattleAttack] = {
+  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack] = {
     list.toNel(opponents.alivesInOrder)
-      .fold(unit(BattleAttack.none))(Character.selectPerson(this))
+      .fold(unit(BattleAttack.none))(Character.selectPerson(this, allies))
   }
 
   def hit(h: Hit): Person = h match {
@@ -78,12 +78,15 @@ final case class Character(
 
 }
 object Character {
-  private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
-    printString(s"$a: Choose your enemy") >>= { _ ⇒
-      readEnemy(persons).map { mp ⇒
-        mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
-      }
+  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[BattleAttack] = {
+    val aliveAllies = allies.alivesInOrder
+    val currentAttacker = aliveAllies.indexOf(a.asPerson)
+    printPersons(formatPersons(aliveAllies, currentAttacker), TeamId.Allies) >>
+    printString(s"$a: Choose your enemy") >>
+    readEnemy(persons).map { mp ⇒
+      mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
     }
+  }
 
   private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
@@ -97,11 +100,11 @@ object Character {
   }
 
   private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
-    _ ← printPersons(formatEnemies(persons, current))
+    _ ← printPersons(formatPersons(persons, current), TeamId.Opponents)
     i ← readInput
   } yield i
 
-  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] = persons
+  private def formatPersons(persons: List[Person], current: Int): List[UiItem] = persons
     .zipWithIndex
-    .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
+    .map(px ⇒ UiItem(px._1.toString, px._2 == current))
 }

@@ -14,7 +14,12 @@
  * limitations under the License.
  */
 
-package ff7
-package algebra
+package ff7.algebra
 
-case class OutPerson(person: String, active: Boolean)
+sealed trait TeamId {
+  def id: String
+}
+object TeamId {
+  case object Allies extends TeamId { val id = "allies" }
+  case object Opponents extends TeamId { val id = "opponents" }
+}

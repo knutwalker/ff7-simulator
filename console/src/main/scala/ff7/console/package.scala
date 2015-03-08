@@ -26,19 +26,19 @@ package object console {
 
   implicit val ConsoleInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-      case PrintPersons(ps) ⇒ printPersons(ps)
-      case PrintString(s)   ⇒ IO.putStrLn(s)
-      case Random(rng)      ⇒ rng.run
-      case ReadInput        ⇒ readInput
+      case PrintPersons(ps, _) ⇒ printPersons(ps)
+      case PrintString(s)      ⇒ IO.putStrLn(s)
+      case Random(rng)         ⇒ rng.run
+      case ReadInput           ⇒ readInput
     }
   }
 
   private val reader = new ConsoleReader
 
-  private def printPersons(persons: List[OutPerson]): IO[Unit] =
+  private def printPersons(persons: List[UiItem]): IO[Unit] =
     persons.map {
-      case OutPerson(p, true)  ⇒ s"${Console.BOLD}> $p${Console.RESET}"
-      case OutPerson(p, false) ⇒ s"  $p"
+      case UiItem(p, true)  ⇒ s"${Console.BOLD}> $p${Console.RESET}"
+      case UiItem(p, false) ⇒ s"  $p"
     }.traverse_(IO.putStrLn)
 
   private def readInput: IO[Input] =

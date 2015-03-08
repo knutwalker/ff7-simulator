@@ -35,10 +35,10 @@ package object gui {
 
   implicit val GuiInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-      case PrintPersons(ps) ⇒ printsPersons(ps)
-      case PrintString(s)   ⇒ printsString(s)
-      case Random(rng)      ⇒ rng.run
-      case ReadInput        ⇒ readsInput
+      case PrintPersons(ps, id) ⇒ printsPersons(ps, id)
+      case PrintString(s)       ⇒ printsString(s)
+      case Random(rng)          ⇒ rng.run
+      case ReadInput            ⇒ readsInput
     }
   }
 
@@ -50,8 +50,8 @@ package object gui {
     SwingApp.shutdown()
   }
 
-  private def printsPersons(ps: List[OutPerson]): IO[Unit] = IO {
-    Swing.onEDT(SwingApp.setButtonsFor(ps))
+  private def printsPersons(ps: List[UiItem], id: TeamId): IO[Unit] = IO {
+    Swing.onEDT(SwingApp.setButtonsFor(ps, id))
   }
 
   private def printsString(s: String): IO[Unit] = IO {
@@ -96,18 +96,19 @@ package object gui {
       .observeOn(swingScheduler)
       .subscribe(_ ⇒ flashWindow())
 
-    def setButtonsFor(ps: List[OutPerson]): Unit = {
+    def setButtonsFor(ps: List[UiItem], id: TeamId): Unit = {
       val labels = ps map { p ⇒
         new Label {
-          text = if (p.active) s"> ${p.person}" else p.person
+          text = if (p.active) s"> ${p.text}" else p.text
           font = if (p.active) new Font(font.getName, Font.BOLD, font.getSize) else font
         }
       }
-      personPanel.rows = ps.size
-      personPanel.contents.clear()
-      personPanel.contents ++= labels
-      personPanel.revalidate()
-      personPanel.repaint()
+      val panel = panels(id)
+      panel.rows = ps.size
+      panel.contents.clear()
+      panel.contents ++= labels
+      panel.revalidate()
+      panel.repaint()
     }
 
     val flashColors = List(
@@ -141,14 +142,20 @@ package object gui {
       text = ""
     }
 
-    val personPanel = new GridPanel(1, 1) {}
-    val flashPanel = new Panel {}
+    val alliesPanel = new GridPanel(0, 1)
+    val opponentsPanel = new GridPanel(0, 1)
+    val panels: TeamId ⇒ GridPanel = {
+      case TeamId.Allies    ⇒ alliesPanel
+      case TeamId.Opponents ⇒ opponentsPanel
+    }
 
-    val worldPanel = new GridPanel(2, 1) {
+    val flashPanel = new Panel {}
+    val worldPanel = new GridPanel(3, 1) {
       focusable = true
 
+      contents += alliesPanel
       contents += label
-      contents += personPanel
+      contents += opponentsPanel
 
       listenTo(keys)
       listenTo(mouse.clicks)

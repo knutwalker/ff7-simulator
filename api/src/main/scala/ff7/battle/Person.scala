@@ -25,6 +25,6 @@ trait Person {
   def hp: HP
   def mp: MP
   def asTarget: Target
-  def chooseAttack(opponents: Team): Interact[BattleAttack]
+  def chooseAttack(opponents: Team, allies: Team): Interact[BattleAttack]
   def hit(h: Hit): Person
 }

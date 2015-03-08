@@ -36,7 +36,7 @@ object Simulation {
 
   private val runAttackSSS: StateT[Interact, BattleField, BattleResult] =
     chooseAttackerSSS.mapK[Interact, BattleResult, BattleField] {
-      case (bf, Some(a)) ⇒ attack(a, bf.enemies).map(b ⇒ (bf, b))
+      case (bf, Some(a)) ⇒ attack(a, bf.enemies, bf.heroes).map(b ⇒ (bf, b))
       case (bf, None)    ⇒ unit(BattleResult.none).map(b ⇒ (bf, b))
     }
 
@@ -77,8 +77,8 @@ object Simulation {
     initiateRound >> battleMonad.iterateUntil(playRoundSSS)(_.isFinished)
   }
 
-  private def attack(attacker: Person, opponents: Team): Interact[BattleResult] = {
-    attacker.chooseAttack(opponents).flatMap {
+  private def attack(attacker: Person, opponents: Team, allies: Team): Interact[BattleResult] = {
+    attacker.chooseAttack(opponents, allies).flatMap {
       case BattleAttack.Attack(x, t) ⇒ executeAttack(attacker, x, t)
       case BattleAttack.None         ⇒ unit(BattleResult.none)
       case BattleAttack.Abort        ⇒ unit(BattleResult.aborted)

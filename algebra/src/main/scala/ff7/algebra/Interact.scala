@@ -27,8 +27,8 @@ object Interact {
   implicit val monad: Monad[Interact] =
     Free.freeMonad[InteractMonad]
 
-  def printPersons(ps: List[OutPerson]): Interact[Unit] =
-    Free.liftFC(PrintPersons(ps))
+  def printPersons(ps: List[UiItem], id: TeamId): Interact[Unit] =
+    Free.liftFC(PrintPersons(ps, id))
 
   def printString(s: String): Interact[Unit] =
     Free.liftFC(PrintString(s))

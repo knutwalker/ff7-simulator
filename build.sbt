@@ -17,11 +17,13 @@ lazy val versions = new {
   val    logging = "3.1.0"
   val      log4j = "2.2"
   val    rxscala = "0.24.0"
+  val    rxswing = "0.22.0"
   val  shapeless = "0.3"
   val     specs2 = "3.0"
   val scalacheck = "1.12.2"
   val      swing = "1.0.1"
   val transducer = "0.2.0"
+  val  zForSpecs = "0.3.0"
 }
 
 lazy val deps = new {
@@ -45,7 +47,7 @@ lazy val deps = new {
   val gui = List(
     "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
     "io.reactivex"                %% "rxscala"                    % rxscala    ,
-    "io.reactivex"                 % "rxswing"                    % "0.22.0"   )
+    "io.reactivex"                 % "rxswing"                    % rxswing    )
 
   val core = List(
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
@@ -59,7 +61,7 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-scalacheck-binding"  % scalaz     ,
     "org.scalacheck"              %% "scalacheck"                 % scalacheck ,
     "org.typelevel"               %% "shapeless-scalacheck"       % shapeless  ,
-    "org.typelevel"               %% "scalaz-specs2"              % "0.3.0"    )
+    "org.typelevel"               %% "scalaz-specs2"              % zForSpecs  )
     .map(_ % "test")
 }
 
@@ -124,6 +126,7 @@ lazy val parent = project.in(file("."))
 
 // =================================
 
+lazy val javaVersion = SettingKey[String]("Java Version")
 lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
 lazy val projectMaintainer = SettingKey[String]("Maintainer")
@@ -133,7 +136,8 @@ lazy val buildSettings = List(
    projectMaintainer := "Paul Horn",
           githubUser := "knutwalker",
           githubRepo := "ff7-simulator",
-        scalaVersion := "2.11.6"
+        scalaVersion := "2.11.6",
+         javaVersion := "1.8"
 )
 
 lazy val commonSettings = List(
@@ -144,6 +148,8 @@ lazy val commonSettings = List(
     "-Xcheckinit" :: "-Xfatal-warnings" :: "-Xfuture" :: "-Xlint" ::
     "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yrangepos" ::
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
+  javacOptions ++=
+    "-source" :: javaVersion.value :: "-target" :: javaVersion.value :: Nil,
   scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(
     url(s"https://github.com/$u/$r"),
     s"scm:git:https://github.com/$u/$r.git",
