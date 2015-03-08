@@ -110,7 +110,7 @@ hs_err_pid*
 .cache/
 .history/
 .lib/
-dist/*
+dist/app/*
 target/
 lib_managed/
 src_managed/
@@ -139,5 +139,3 @@ project/*-shim.sbt
 project/project/
 project/target/
 
-core/ff7
-ff7-parent

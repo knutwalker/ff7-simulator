@@ -125,12 +125,18 @@ lazy val tests = project
   .settings(libraryDependencies ++= deps.tests)
   .dependsOn(core)
 
+lazy val dist = project
+  .settings(
+    resourceDirectory <<= baseDirectory { _ / "scripts" },
+               target <<= baseDirectory { _ / "app" }
+  )
+
 lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
   .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
-  .aggregate(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
+  .aggregate(algebra, api, characters, console, core, dist, equipment, formulas, gui, monsters, tests)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
@@ -289,12 +295,13 @@ lazy val buildInfos = buildInfoSettings ++ List(
 
 lazy val buildsUberJar = List(
      assemblyJarName in assembly := { if (buildFatJar.value) s"${name.value}" else s"${name.value}_${version.value}.jar" },
-  assemblyOutputPath in assembly := baseDirectory.value / (assemblyJarName in assembly).value,
+  assemblyOutputPath in assembly := (target in dist).value / (assemblyJarName in assembly).value,
            mainClass in assembly := Some("ff7.Main"),
                 test in assembly := {},
       assemblyOption in assembly := {
+        val starter = IO.readLines((resourceDirectory in dist).value / "starter.sh")
         val opts = (assemblyOption in assembly).value
-          .copy(prependShellScript = Some(defaultShellScript))
+          .copy(prependShellScript =  Some(starter))
         if (!buildFatJar.value)
           opts.copy(includeScala = false, includeDependency = false)
         else opts
