@@ -18,10 +18,11 @@ package ff7
 package characters
 
 import stats._
+import weapons.Weapons
 
 import scalaz.Maybe._
 
-import com.typesafe.config.{ConfigObject, ConfigFactory}
+import com.typesafe.config.ConfigObject
 
 import collection.JavaConverters._
 import collection.immutable
@@ -30,7 +31,7 @@ import scala.language.dynamics
 
 object Characters extends Dynamic {
 
-  private val config = ConfigFactory.load()
+  private val config = Weapons.config
 
   private val loaded = {
     val c = config.getObject("ff7.characters")
@@ -56,7 +57,7 @@ object Characters extends Dynamic {
       Spirit(v("spirit")[Int]),
       Luck(v("luck")[Int]),
       XP(v("xp")[Int]),
-      empty,
+      fromNullable(v("weapon")).map(s ⇒ Weapons.selectDynamic(s[String])),
       empty
     )
   }

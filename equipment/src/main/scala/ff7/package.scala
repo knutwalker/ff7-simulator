@@ -14,16 +14,33 @@
  * limitations under the License.
  */
 
-package ff7
+import ff7.battle.{Person, Team}
 
-import weapons._
-
-import scalaz.Maybe._
+import scalaz.Isomorphism._
+import scalaz.NonEmptyList
 
 import com.typesafe.config.{ConfigObject, ConfigValue}
 
 
-package object characters {
+package object ff7 {
+  type TeamF[x] = Team
+
+  val teamNelIso: Team <=> NonEmptyList[Person] =
+    new (Team <=> NonEmptyList[Person]) {
+      val to: (Team) ⇒ NonEmptyList[Person] = t ⇒ {
+        val (first, rest) = t.inOrder
+        NonEmptyList.nel(first, rest)
+      }
+      val from: (NonEmptyList[Person]) ⇒ Team = nel ⇒ Team(nel.head, nel.tail, None)
+    }
+
+  implicit class NelTeam(val t: Team) extends AnyVal {
+    def toNel: NonEmptyList[Person] = teamNelIso.to(t)
+  }
+
+  implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
+    def toTeam: Team = teamNelIso.from(ps)
+  }
 
   implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
     def apply[T]: T = v.unwrapped().asInstanceOf[T]
@@ -32,7 +49,4 @@ package object characters {
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
     def apply(key: String): ConfigValue = v.get(key)
   }
-
-  val  cloud = Characters.cloud2.copy(weapon = just(busterSword))
-  val barret = Characters.barret.copy(weapon = just(gatlingGun))
 }

@@ -82,6 +82,7 @@ lazy val api = project
 lazy val equipment = project
   .settings(name := "ff7-equipment")
   .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.content)
   .dependsOn(api)
 
 lazy val formulas = project
@@ -92,14 +93,12 @@ lazy val formulas = project
 lazy val characters = project
   .settings(name := "ff7-characters")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.content)
   .dependsOn(equipment)
 
 lazy val monsters = project
   .settings(name := "ff7-monsters")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.content)
-  .dependsOn(api)
+  .dependsOn(equipment)
 
 lazy val console = project
   .settings(name := "ff7-console")
@@ -299,7 +298,13 @@ lazy val buildsUberJar = List(
         if (!buildFatJar.value)
           opts.copy(includeScala = false, includeDependency = false)
         else opts
-      }
+      },
+  assemblyMergeStrategy in assembly := {
+    case "application.conf" ⇒ MergeStrategy.concat
+    case x                  ⇒
+      val oldStrategy = (assemblyMergeStrategy in assembly).value
+      oldStrategy(x)
+  }
 )
 
 lazy val ff7Settings =
