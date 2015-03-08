@@ -35,9 +35,8 @@ object Main extends SafeApp {
 
   val party = Team(Characters.cloud2, Characters.barret)
   val enemies = Team(sweeper.copy(name = "Sweeper A"), sweeper.copy(name = "Sweeper B"))
-  val field = BattleField.init(party, enemies)
 
-  lazy val program = for {
+  def program(field: BattleField) = for {
     _      ← debug("Starting simulation")
     _      ← printString(s"Starting a new round with $field")
     result ← Simulation(field)
@@ -50,12 +49,27 @@ object Main extends SafeApp {
     ui.start >> runRounds(repetitions, ui) >> ui.stop
   }
 
-  def runRounds(repetitions: Int, ui: UI): IO[Unit] =
-    List.fill(repetitions)(()).traverse_(_ ⇒ runRound(ui))
+  def runRounds(repetitions: Int, ui: UI): IO[Unit] = {
+    StateT.stateTMonadState[RoundState, IO]
+      .iterateUntil(runRoundState(ui)) { rs ⇒
+        rs.rounds >= repetitions || rs.heroes.alive.isEmpty
+    }.eval(RoundState(party, 0, 0)) >>= { rs ⇒ IO {
+      logger.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
+    }}
+  }
 
-  def runRound(ui: UI): IO[Unit] = {
+  def runRoundState(ui: UI): StateT[IO, RoundState, RoundState] =
+    StateT(rs ⇒ {
+      runRound(ui, BattleField.init(rs.heroes, enemies))
+        .map(f ⇒ {
+          val team = if (f.enemies.isHero) f.enemies else f.heroes
+          RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
+      })
+    })
+
+  def runRound(ui: UI, field: BattleField): IO[BattleField] = {
     import ui.interpreter
-    Interact.run(program).void
+    Interact.run(program(field))
   }
 
   private def parseOpts(args: List[String]): Options =
@@ -103,4 +117,6 @@ object Main extends SafeApp {
       case _                           ⇒ delegate(fa)
     }
   }
+
+  case class RoundState(heroes: Team, rounds: Int, turns: Int)
 }
