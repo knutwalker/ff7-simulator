@@ -54,6 +54,7 @@ final case class Character(
 
   val asTarget: Target = this
   val asPerson: Person = this
+  val isHero: Boolean = true
 
   val chosenAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)

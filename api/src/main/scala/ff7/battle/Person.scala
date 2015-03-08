@@ -28,5 +28,6 @@ trait Person {
   def mp: MP
   def asTarget: Target
   def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack]
+  def isHero: Boolean
   def hit(h: Hit): Person
 }

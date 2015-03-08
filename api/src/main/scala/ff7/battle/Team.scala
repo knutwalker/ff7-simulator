@@ -21,6 +21,8 @@ final case class Team(first: Person, rest: List[Person], originalStart: Option[I
 
   def persons: List[Person] = first :: rest
 
+  def isHero = persons.forall(_.isHero)
+
   def inOrder: (Person, List[Person]) =
     originalStart.fold((first, rest)) { idx ⇒
       val inOrder = split(idx)

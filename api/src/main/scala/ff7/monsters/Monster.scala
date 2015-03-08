@@ -52,6 +52,7 @@ final case class Monster(
 
   val asTarget: Target = this
   val asPerson: Person = this
+  val isHero: Boolean = false
 
   def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
     val alive = opponents.alives
