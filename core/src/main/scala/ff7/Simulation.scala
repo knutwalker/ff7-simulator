@@ -16,19 +16,13 @@
 
 package ff7
 
-import algebra.{Input, Interact, OutPerson}
-import Interact._
+import algebra.Interact, Interact._
 import battle._
-import characters.Character
 import monsters._
 import simulation._
 
 import scalaz._
-import Maybe._
 import Scalaz._
-import std.list
-
-import math.{max, min}
 
 object Simulation {
   type IOState[s, a] = StateT[Interact, s, a]
@@ -84,53 +78,12 @@ object Simulation {
   }
 
   private def attack(attacker: Person, opponents: Team): Interact[BattleResult] = {
-    chooseAttack(attacker, opponents).flatMap {
+    attacker.chooseAttack(opponents).flatMap {
       case BattleAttack.Attack(x, t) ⇒ executeAttack(attacker, x, t)
       case BattleAttack.None         ⇒ unit(BattleResult.none)
       case BattleAttack.Abort        ⇒ unit(BattleResult.aborted)
     }
   }
-
-  private def chooseAttack(attacker: Person, opponents: Team): Interact[BattleAttack] = {
-    attacker match {
-      case c: Character ⇒
-        list.toNel(opponents.alivesInOrder)
-          .fold(unit(BattleAttack.none))(selectPerson(c))
-
-      case m: Monster ⇒
-        val alive = opponents.alives
-        alive.headOption
-          .map(a ⇒ m.ai(m, opponents.copy(first = a, rest = alive.tail)))
-          .getOrElse(unit(BattleAttack.None))
-    }
-  }
-
-  private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
-    printString(s"$a: Choose your enemy") >>= { _ ⇒
-      readEnemy(persons).map { mp ⇒
-        mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
-      }
-    }
-
-  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
-    val bounded = min(max(0, current), persons.size - 1)
-    printEnemies(persons.list, bounded).flatMap {
-      case Input.Quit ⇒ unit(empty[Person])
-      case Input.Ok   ⇒ unit(just(persons.list(bounded)))
-      case Input.Up   ⇒ readEnemy(persons, bounded - 1)
-      case Input.Down ⇒ readEnemy(persons, bounded + 1)
-      case _          ⇒ readEnemy(persons, bounded)
-    }
-  }
-
-  private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
-    _ ← printPersons(formatEnemies(persons, current))
-    i ← readInput
-  } yield i
-
-  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] = persons
-      .zipWithIndex
-      .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
 
   private def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
     attacker.chosenAttack.formulaType match {

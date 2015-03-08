@@ -17,13 +17,19 @@
 package ff7
 package characters
 
+import algebra.{OutPerson, Input, Interact}
+import algebra.Interact._
 import battle._
 import stats._
 
 import scalaz._
+import Maybe._
 import Scalaz._
+import std.list
 
 import shapeless.contrib.scalaz._
+
+import math._
 
 final case class Character(
   name: String,
@@ -49,8 +55,13 @@ final case class Character(
   val asTarget: Target = this
   val asPerson: Person = this
 
-  def chosenAttack: MonsterAttack =
+  val chosenAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)
+
+  def chooseAttack(opponents: Team): Interact[BattleAttack] = {
+    list.toNel(opponents.alivesInOrder)
+      .fold(unit(BattleAttack.none))(Character.selectPerson(this))
+  }
 
   def hit(h: Hit): Person = h match {
     case Hit.Missed      ⇒ this
@@ -65,4 +76,32 @@ final case class Character(
   //  def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
   //  def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
 
+}
+object Character {
+  private def selectPerson(a: Attacker)(persons: NonEmptyList[Person]): Interact[BattleAttack] =
+    printString(s"$a: Choose your enemy") >>= { _ ⇒
+      readEnemy(persons).map { mp ⇒
+        mp.cata(t ⇒ BattleAttack(a, t.asTarget), BattleAttack.abort)
+      }
+    }
+
+  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Maybe[Person]] = {
+    val bounded = min(max(0, current), persons.size - 1)
+    printEnemies(persons.list, bounded).flatMap {
+      case Input.Quit ⇒ unit(empty[Person])
+      case Input.Ok   ⇒ unit(just(persons.list(bounded)))
+      case Input.Up   ⇒ readEnemy(persons, bounded - 1)
+      case Input.Down ⇒ readEnemy(persons, bounded + 1)
+      case _          ⇒ readEnemy(persons, bounded)
+    }
+  }
+
+  private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
+    _ ← printPersons(formatEnemies(persons, current))
+    i ← readInput
+  } yield i
+
+  private def formatEnemies(persons: List[Person], current: Int): List[OutPerson] = persons
+    .zipWithIndex
+    .map(px ⇒ OutPerson(px._1.toString, px._2 == current))
 }

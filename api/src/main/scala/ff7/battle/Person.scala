@@ -17,6 +17,7 @@
 package ff7
 package battle
 
+import algebra.Interact
 import stats._
 
 trait Person {
@@ -24,5 +25,6 @@ trait Person {
   def hp: HP
   def mp: MP
   def asTarget: Target
+  def chooseAttack(opponents: Team): Interact[BattleAttack]
   def hit(h: Hit): Person
 }

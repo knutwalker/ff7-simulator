@@ -31,16 +31,13 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
 
+  val characters = List(
+    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  )
+
   val console = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "jline"                        % "jline"                      % jline      )
 
-  val formulas = List(
-    "com.nicta"                   %% "rng"                        % rng        )
-
-  val characters = List(
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  )
 
   val core = List(
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
@@ -58,15 +55,16 @@ lazy val deps = new {
     .map(_ % "test")
 }
 
-lazy val api = project
-  .settings(name := "ff7-api")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.api)
-
 lazy val algebra = project
   .settings(name := "ff7-algebra")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.algebra)
+
+lazy val api = project
+  .settings(name := "ff7-api")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.api)
+  .dependsOn(algebra)
 
 lazy val equipment = project
   .settings(name := "ff7-equipment")
@@ -76,7 +74,6 @@ lazy val equipment = project
 lazy val formulas = project
   .settings(name := "ff7-formulas")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.formulas)
   .dependsOn(api)
 
 lazy val characters = project
@@ -91,11 +88,6 @@ lazy val console = project
   .settings(libraryDependencies ++= deps.console)
   .dependsOn(algebra)
 
-// lazy val simulation = project
-//   .settings(name := "ff7-simulation")
-//   .settings(ff7Settings: _*)
-//   .settings(libraryDependencies ++= deps.simulation)
-//   .dependsOn(algebra)
 
 lazy val core = project
   .settings(name := "ff7")

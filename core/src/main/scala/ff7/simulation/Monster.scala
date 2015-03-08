@@ -17,6 +17,8 @@
 package ff7
 package simulation
 
+import algebra._
+import algebra.Interact._
 import battle._
 import stats._
 
@@ -48,6 +50,13 @@ final case class Monster(
 
   val asTarget: Target = this
   val asPerson: Person = this
+
+  def chooseAttack(opponents: Team): Interact[BattleAttack] = {
+    val alive = opponents.alives
+    alive.headOption
+      .map(a ⇒ ai(this, opponents.copy(first = a, rest = alive.tail)))
+      .getOrElse(unit(BattleAttack.None))
+  }
 
   def hit(h: Hit): Person = h match {
     case Hit.Missed      ⇒ this
