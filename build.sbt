@@ -148,8 +148,9 @@ lazy val commonSettings = List(
     "-deprecation" :: "-explaintypes" :: "-feature" :: "-unchecked" ::
     "-language:existentials" :: "-language:higherKinds" :: "-language:implicitConversions" :: "-language:postfixOps" ::
     "-Xcheckinit" :: "-Xfatal-warnings" :: "-Xfuture" :: "-Xlint" ::
-    "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yrangepos" ::
+    "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yno-predef" ::
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
+  scalacOptions in Test += "-Yrangepos",
   javacOptions ++=
     "-source" :: javaVersion.value :: "-target" :: javaVersion.value :: Nil,
   scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(

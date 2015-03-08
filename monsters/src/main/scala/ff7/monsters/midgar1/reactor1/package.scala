@@ -87,9 +87,9 @@ package object reactor1 {
     val fire = MonsterAttack.physical("Fire", // Magical
       power = Power(Rational(1, 2)), cost = some(MP(4)))
     object ai extends AI {
-      def setup(self: Monster): Interact[Monster] = ???
+      def setup(self: Monster): Interact[Monster] = Predef.???
       def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
-        ???
+        Predef.???
       }
     }
     Monster("Mono Drive",

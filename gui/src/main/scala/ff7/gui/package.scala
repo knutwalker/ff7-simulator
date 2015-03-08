@@ -90,8 +90,8 @@ package object gui {
     keypresses
       .map(_.key)
       .sliding(10, 1)
-      .flatMap(_.zipWith(konami)(_ == _).forall(identity))
-      .filter(identity)
+      .flatMap(_.zipWith(konami)(_ == _).forall(Predef.identity))
+      .filter(Predef.identity)
       .subscribeOn(swingScheduler)
       .observeOn(swingScheduler)
       .subscribe(_ ⇒ flashWindow())

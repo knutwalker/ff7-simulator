@@ -30,6 +30,7 @@ import org.slf4j.LoggerFactory
 import util.Try
 
 object Main extends SafeApp {
+  import Predef.augmentString
 
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
@@ -43,7 +44,7 @@ object Main extends SafeApp {
   }
 
   def parseOpts(args: List[String]): Options =
-    args.foldLeft(Options(1, Console)) { (opts, arg) ⇒
+    args.foldLeft(Options(1, GUI)) { (opts, arg) ⇒
       Try(arg.toInt).toOption
         .map(r ⇒ opts.copy(repetitions = r))
         .orElse(Some(arg.toLowerCase).collect {
