@@ -40,16 +40,29 @@ object Simulation {
     }
 
   private val playRoundSSS: StateT[Interact, BattleField, BattleField] = {
-    runAttackSSS.mapK[Interact, BattleField, BattleField] { _.map {
-      case (bf, m@BattleResult.Attack(originalAttacker, attacker, target, hit)) ⇒
-        val enemies = bf.enemies.updated(target.asPerson, target.asPerson.hit(hit))
-        val heroes = bf.heroes.updated(originalAttacker, attacker.asPerson)
-        bf.round(m).copy(heroes = enemies, enemies = heroes)
+    runAttackSSS.mapK[Interact, BattleField, BattleField] { _.flatMap {
+      case (bf, m@BattleResult.Attack(oa, a, t, h)) ⇒
+        val enemies = bf.enemies.updated(t.asPerson, t.asPerson.hit(h))
+        val heroes = bf.heroes.updated(oa, a.asPerson)
+        val b = bf.round(m).copy(heroes = enemies, enemies = heroes)
+        val msg = h match {
+          case Hit.Missed ⇒
+            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] but missed"
+          case Hit.Hits(x) ⇒
+            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit with $x damage"
+          case Hit.Critical(x) ⇒
+            s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit critically with $x damage"
+        }
+        Interact.printString(msg) map (_ ⇒ (b, b))
       case (bf, m@BattleResult.None)                                            ⇒
-        bf.round(m)
+        val b = bf.round(m)
+        val msg = "No attack happened"
+        Interact.printString(msg) map (_ ⇒ (b, b))
       case (bf, m@BattleResult.Aborted)                                         ⇒
-        bf.round(m).copy(aborted = true)
-    }.map(_.squared) }
+        val b = bf.round(m).copy(aborted = true)
+        val msg = "Attack was aborted"
+        Interact.printString(msg) map (_ ⇒ (b, b))
+    }}
   }
 
   private val setupPerson: Person ⇒ Interact[Person] = {

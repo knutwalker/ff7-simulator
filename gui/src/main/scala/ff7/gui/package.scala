@@ -55,7 +55,7 @@ package object gui {
   }
 
   private def printsString(s: String): IO[Unit] = IO {
-    Swing.onEDT(SwingApp.label.text = s)
+    SwingApp.labels.onNext(s)
   }
 
   private def readsInput: IO[Input] = IO {
@@ -67,8 +67,13 @@ package object gui {
   object SwingApp extends SimpleSwingApplication { also: Reactor ⇒
 
     private val keypresses = PublishSubject[KeyPressed]()
+    private val labelTexts = PublishSubject[String]()
+
+    val labels: Observer[String] = labelTexts
 
     val inputs: Observable[Input] = keypresses
+      .subscribeOn(swingScheduler)
+      .observeOn(swingScheduler)
       .map(_.key)
       .collect {
         case Key.Up    | Key.W | Key.K ⇒ Input.Up
@@ -79,8 +84,6 @@ package object gui {
         case Key.Q                     ⇒ Input.Quit
         case Key.BackSpace             ⇒ Input.Undo
       }
-      .observeOn(swingScheduler)
-      .subscribeOn(swingScheduler)
 
     val konami = List(
       Key.Up, Key.Up, Key.Down, Key.Down,
@@ -88,13 +91,20 @@ package object gui {
       Key.B, Key.A)
 
     keypresses
+      .subscribeOn(swingScheduler)
+      .observeOn(swingScheduler)
       .map(_.key)
       .sliding(10, 1)
       .flatMap(_.zipWith(konami)(_ == _).forall(Predef.identity))
       .filter(Predef.identity)
+      .subscribe(_ ⇒ flashWindow())
+
+    (Observable.just("", "", "") ++ labelTexts)
       .subscribeOn(swingScheduler)
       .observeOn(swingScheduler)
-      .subscribe(_ ⇒ flashWindow())
+      .sliding(3, 1)
+      .flatMap(_.toList)
+      .subscribe(updateText(_))
 
     def setButtonsFor(ps: List[UiItem], id: TeamId): Unit = {
       val labels = ps map { p ⇒
@@ -138,8 +148,29 @@ package object gui {
       })
     }
 
-    val label = new Label {
+    def updateText(xs: List[String]) = {
+      val labels = List(label1, label2, label3)
+      (xs zip labels) foreach {
+        case (s, l) ⇒ l.text = s
+      }
+    }
+
+    val label1 = new Label {
       text = ""
+      foreground = Color.gray
+    }
+    val label2 = new Label {
+      text = ""
+      foreground = Color.darkGray
+    }
+    val label3 = new Label {
+      text = ""
+      font = new Font(font.getName, Font.BOLD, font.getSize)
+    }
+    val label = new GridPanel(3, 1) {
+      contents += label1
+      contents += label2
+      contents += label3
     }
 
     val alliesPanel = new GridPanel(0, 1)
@@ -166,8 +197,8 @@ package object gui {
     }
 
     val top = new MainFrame {
-      title = "FF7"
-      preferredSize = new Dimension(350, 250)
+      title = "FF7 SImulation"
+      preferredSize = new Dimension(640, 480)
       contents = worldPanel
       centerOnScreen()
     }
