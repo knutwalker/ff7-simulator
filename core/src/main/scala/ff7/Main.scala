@@ -38,15 +38,26 @@ object Main extends SafeApp {
   val field = BattleField.init(party, enemies)
 
   override def runl(args: List[String]): IO[Unit] = {
-    val repetitions = args.headOption.flatMap(x ⇒ Try(x.toInt).toOption).getOrElse(1)
-    runRounds(repetitions)
+    val Options(repetitions, ui) = parseOpts(args)
+    ui.start >> runRounds(repetitions, ui) >> ui.stop
   }
 
-  def runRounds(repetitions: Int): IO[Unit] =
-    List.fill(repetitions)(repetitions).traverse_(runRound)
+  def parseOpts(args: List[String]): Options =
+    args.foldLeft(Options(1, Console)) { (opts, arg) ⇒
+      Try(arg.toInt).toOption
+        .map(r ⇒ opts.copy(repetitions = r))
+        .orElse(Some(arg.toLowerCase).collect {
+          case "console" ⇒ opts.copy(ui = Console)
+          case "gui"     ⇒ opts.copy(ui = GUI)
+        })
+        .getOrElse(opts)
+    }
 
-  def runRound(ignored: Int): IO[Unit] = {
-    import console.ConsoleInterpreter
+  def runRounds(repetitions: Int, ui: UI): IO[Unit] =
+    List.fill(repetitions)(()).traverse_(_ ⇒ runRound(ui))
+
+  def runRound(ui: UI): IO[Unit] = {
+    import ui.interpreter
     val simulation = Interact.run(runSimulation)
     log(s"Starting a new round with $field") >> simulation >>= (_.traverse_(x ⇒ log(x)))
   }
@@ -69,5 +80,23 @@ object Main extends SafeApp {
 
   private def log(x: ⇒ String): IO[Unit] = {
     IO(logger.info(x))
+  }
+
+  case class Options(repetitions: Int, ui: UI)
+
+  sealed trait UI {
+    def start: IO[Unit]
+    def stop: IO[Unit]
+    implicit def interpreter: InteractOp ~> IO
+  }
+  case object Console extends UI {
+    def start: IO[Unit] = IO(())
+    def stop: IO[Unit] = IO(())
+    implicit def interpreter: InteractOp ~> IO = console.ConsoleInterpreter
+  }
+  case object GUI extends UI {
+    def start: IO[Unit] = IO(gui.start())
+    def stop: IO[Unit] = IO(gui.stop())
+    implicit def interpreter: InteractOp ~> IO = gui.GuiInterpreter
   }
 }

@@ -16,28 +16,36 @@ lazy val versions = new {
   val      jline = "2.12.1"
   val    logging = "3.1.0"
   val      log4j = "2.2"
+  val    rxscala = "0.24.0"
   val  shapeless = "0.3"
   val     specs2 = "3.0"
   val scalacheck = "1.12.2"
+  val      swing = "1.0.1"
+  val transducer = "0.2.0"
 }
 
 lazy val deps = new {
   import versions._
 
   val api = List(
-    "org.spire-math"              %% "spire"                      % spire      )
+    "org.spire-math"              %% "spire"                      % spire      ,
+    "de.knutwalker"               %% "transducers-scala"          % transducer )
 
   val algebra = List(
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
 
   val characters = List(
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless  )
 
   val console = List(
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "jline"                        % "jline"                      % jline      )
 
+  val gui = List(
+    "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
+    "io.reactivex"                %% "rxscala"                    % rxscala    ,
+    "io.reactivex"                 % "rxswing"                    % "0.22.0"   )
 
   val core = List(
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
@@ -88,12 +96,17 @@ lazy val console = project
   .settings(libraryDependencies ++= deps.console)
   .dependsOn(algebra)
 
+lazy val gui = project
+  .settings(name := "ff7-gui")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.gui)
+  .dependsOn(algebra)
 
 lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(characters, console, equipment, formulas)
+  .dependsOn(characters, console, equipment, formulas, gui)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -106,8 +119,8 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .dependsOn(algebra, api, characters, console, core, equipment, formulas, tests)
-  .aggregate(algebra, api, characters, console, core, equipment, formulas, tests)
+  .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, tests)
+  .aggregate(algebra, api, characters, console, core, equipment, formulas, gui, tests)
 
 // =================================
 
