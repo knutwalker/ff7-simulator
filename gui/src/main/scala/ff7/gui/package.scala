@@ -29,7 +29,9 @@ import rx.schedulers.SwingScheduler
 import swing._
 import event._
 import scala.concurrent.duration._
+import util.Try
 import java.awt.{Color, Font}
+import javax.swing.ImageIcon
 
 package object gui {
 
@@ -196,11 +198,30 @@ package object gui {
       }
     }
 
+    val icon = new ImageIcon(getClass.getClassLoader.getResource("logo_huge.png"))
+    val iconAsImage = icon.getImage
+
     val top = new MainFrame {
       title = "FF7 SImulation"
+      iconImage = iconAsImage
       preferredSize = new Dimension(640, 480)
       contents = worldPanel
       centerOnScreen()
+    }
+
+    private def trySetDockIcon(): Unit = {
+      for {
+        cls ← Try(Class.forName("com.apple.eawt.Application"))
+        getter ← Try(cls.getDeclaredMethod("getApplication"))
+        instance ← Try(getter.invoke(null)) // scalastyle:ignore
+        setDock ← Try(cls.getDeclaredMethod("setDockIconImage", Predef.classOf[Image]))
+        _ ← Try(setDock.invoke(instance, iconAsImage))
+      } yield true
+    }
+
+    override def startup(args: Array[String]): Unit = {
+      trySetDockIcon()
+      super.startup(args)
     }
 
     override def shutdown(): Unit = {
