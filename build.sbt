@@ -17,6 +17,7 @@ lazy val versions = new {
   val        rng = "1.3.0"
   val    rxscala = "0.24.0"
   val    rxswing = "0.22.0"
+  val      scala = "2.11.6"
   val scalacheck = "1.12.2"
   val     scalaz = "7.1.1"
   val  shapeless = "0.3"
@@ -41,6 +42,7 @@ lazy val deps = new {
     "com.nicta"                   %% "rng"                        % rng        )
 
   val content = List(
+    "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
   val gui = List(

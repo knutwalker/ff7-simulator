@@ -29,79 +29,66 @@ import com.nicta.rng.Rng
 import shapeless.contrib.scalaz._
 import spire.math.Rational
 
-package object reactor1 {
+package reactor1 {
 
-  val Mp = {
+  object Mp extends SimpleAi {
     val machineGun = MonsterAttack.physical("Machine Gun")
     val tonfa = MonsterAttack.physical("Tonfa",
       AttackPercent(85), Power(Rational(3, 2)))
-    object ai extends SimpleAi {
-      def attack =
-        if (true) // if (heroes.rowPosition(self) == FrontRow)
-          AI.choose(1, 2, tonfa, machineGun)
-        else
-          AI.choose(1, 6, tonfa, machineGun)
-    }
-    Monsters.mp.get.copy(ai = ai)
+    def attack =
+      if (true) // if (heroes.rowPosition(self) == FrontRow)
+        AI.choose(1, 2, tonfa, machineGun)
+      else
+        AI.choose(1, 6, tonfa, machineGun)
   }
 
-  val guardHound = {
+  object GuardHound extends SimpleAi {
     val bite = MonsterAttack.physical("Bite")
     val tentacle = MonsterAttack.physical("Tentacle",
       AttackPercent(90), Power(Rational(3, 2)))
-    object ai extends SimpleAi {
-      def attack = AI.choose(1, 3, tentacle, bite)
-      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
-    }
-    Monsters.guardHound.get.copy(ai = ai)
+    def attack = AI.choose(1, 3, tentacle, bite)
+    override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
   }
 
-  val monoDrive = {
+
+  object MonoDrive extends AI {
     val drillDrive = MonsterAttack.physical("Drilldrive")
     val fire = MonsterAttack.physical("Fire", // Magical
       power = Power(Rational(1, 2)), cost = some(MP(4)))
-    object ai extends AI {
-      def setup(self: Monster): Interact[Monster] = Predef.???
-      def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
-        Predef.???
-      }
+    def setup(self: Monster): Interact[Monster] = Predef.???
+    def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
+      Predef.???
     }
-    Monsters.monoDrive.get.copy(ai = ai)
   }
 
-  val grunt = {
+  object Grunt extends SimpleAi {
     val handClaw = MonsterAttack.physical("Handclaw")
     val beamGun = MonsterAttack.physical("Beam Gun",
       power = Power(Rational(9, 8)))
-    object ai extends SimpleAi {
-      def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
-        AI.choose(1, 2, beamGun, handClaw)
-      } else {
-        AI.choose(1, 12, handClaw, beamGun)
-      }
+    def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
+      AI.choose(1, 2, beamGun, handClaw)
+    } else {
+      AI.choose(1, 12, handClaw, beamGun)
     }
-    Monsters.grunt.get.copy(ai = ai)
   }
 
-  val firstRay = {
+  object FirstRay extends SimpleAi {
     val laserCannon = MonsterAttack.physical("Laser Cannon")
-    object ai extends SimpleAi {
-      private val count = 0
-      override def target(targets: Team) = {
-        if (count == 0) {
-          targets.toNel.maximumBy1(_.hp)
-        } else {
-          // TODO: no attack
-          targets.toNel.maximumBy1(_.hp)
-        }
+    private val count = 0
+    override def target(targets: Team) = {
+      if (count == 0) {
+        targets.toNel.maximumBy1(_.hp)
+      } else {
+        // TODO: no attack
+        targets.toNel.maximumBy1(_.hp)
       }
-      def attack = laserCannon
     }
-    Monsters.firstRay.get.copy(ai = ai)
+    def attack = laserCannon
   }
 
-  val sweeper = {
+  object Sweeper extends AI {
     val machineGun = MonsterAttack.physical("Machine Gun")
+
     val doubleMachineGun = MonsterAttack.physical("W Machine Gun",
       power = Power(Rational(7, 4)))
     val smokeShot = MonsterAttack.physical("Smoke Shot",
@@ -124,16 +111,14 @@ package object reactor1 {
       override def modify(self: Monster): Monster = self.copy(ai = state1)
     }
 
-    object ai extends AI {
-      override def setup(self: Monster) =
-        Interact.random(Rng.chooseint(0, 3).map {
-          case 0 ⇒ self.copy(ai = state1)
-          case 1 ⇒ self.copy(ai = state2)
-          case _ ⇒ self.copy(ai = state3)
-        })
-      def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-        throw new IllegalStateException("setup routine did not run")
-    }
-    Monsters.sweeper.get.copy(ai = ai)
+    override def setup(self: Monster) =
+      Interact.random(Rng.chooseint(0, 3).map {
+        case 0 ⇒ self.copy(ai = state1)
+        case 1 ⇒ self.copy(ai = state2)
+        case _ ⇒ self.copy(ai = state3)
+      })
+
+    def apply(self: Monster, targets: Team): Interact[BattleAttack] =
+      throw new IllegalStateException("setup routine did not run")
   }
 }

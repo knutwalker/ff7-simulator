@@ -17,7 +17,7 @@
 import ff7.battle.{Person, Team}
 
 import scalaz.Isomorphism._
-import scalaz.NonEmptyList
+import scalaz._
 
 import com.typesafe.config.{ConfigObject, ConfigValue}
 
@@ -51,4 +51,15 @@ package object ff7 {
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
     def apply(key: String): ConfigValue = v.get(key)
   }
+
+  private[this] def justMessage[A, F[_, _]: Bifunctor](f: F[Throwable, A]): F[String, A] =
+    Bifunctor[F].leftMap(f)(_.getMessage)
+
+  private[ff7] def TryE[A](f: ⇒ A): String \/ A =
+    justMessage(\/.fromTryCatchNonFatal(f))
+
+  implicit final class DisjunctionOps[E, A](val e: E \/ A) extends AnyVal {
+    def nel: ValidationNel[E, A] = e.validation.toValidationNel
+  }
+
 }

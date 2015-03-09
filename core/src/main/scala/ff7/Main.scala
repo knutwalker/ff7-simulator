@@ -19,7 +19,7 @@ package ff7
 import algebra._, LogLevel._, Interact._
 import battle.{BattleField, Team}
 import characters.Characters
-import monsters.midgar1.reactor1._
+import monsters.Monsters
 
 import scalaz._
 import Scalaz._
@@ -34,7 +34,10 @@ object Main extends SafeApp {
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
   val party = Team(Characters.cloud2.get, Characters.barret.get)
-  val enemies = Team(sweeper.copy(name = "Sweeper A"), sweeper.copy(name = "Sweeper B"))
+  val enemies = Team(
+    Monsters.sweeper.get.copy(name = "Sweeper A"),
+    Monsters.sweeper.get.copy(name = "Sweeper B")
+  )
 
   def program(field: BattleField) = for {
     _      ← debug("Starting simulation")

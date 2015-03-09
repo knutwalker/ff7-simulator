@@ -28,7 +28,6 @@ abstract class ConfigLoader[A: Caster](configPath: String) extends Dynamic {
   private lazy val loaded = {
     val c = ConfigLoader.config.getObject(configPath)
     val chars = c.entrySet.asScala
-
     chars.foldLeft(immutable.Map.empty[String, A]) { (m, char) ⇒
       char.getValue.apply[A].toOption
         .fold(m)(w ⇒ m + ((char.getKey, w)))
@@ -36,6 +35,8 @@ abstract class ConfigLoader[A: Caster](configPath: String) extends Dynamic {
   }
 
   final def selectDynamic(name: String): Option[A] = loaded.get(name)
+
+  final def available = loaded.keySet
 }
 object ConfigLoader {
   private val config = ConfigFactory.load()

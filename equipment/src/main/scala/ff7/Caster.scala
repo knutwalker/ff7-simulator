@@ -16,10 +16,9 @@
 
 package ff7
 
-import algebra._
 import battle.{BattleAttack, Team}
 import characters.Character
-import monsters.{AI, Monster}
+import monsters.{AI, AiLoader, Monster, Monsters}
 import stats._
 import weapons.Weapons
 
@@ -32,9 +31,9 @@ import Predef.augmentString
 import util.{Failure, Success, Try}
 
 trait Caster[A] {
-  def safeCast(x: AnyRef): Try[A]
-  def unsafeCast(x: AnyRef): A = safeCast(x).get
   def cast(v: ConfigValue): Try[A] = safeCast(v.unwrapped())
+  protected def safeCast(x: AnyRef): Try[A] = Try(x.asInstanceOf[A])
+  protected def unsafeCast(x: AnyRef): A = safeCast(x).get
 }
 object Caster extends LowerPriorityImplicits {
   implicit val string: Caster[String] = new Caster[String] {
@@ -145,7 +144,8 @@ object Caster extends LowerPriorityImplicits {
         defensePercent ← v("defensepercent")[Int]
         magicAttack ← v("magicattack")[Int]
         magicDefense ← v("magicdefense")[Int]
-        xp ← v("xp").apply[Int]
+        xp ← v("xp")[Int]
+        ai ← v("ai")[AI]
       } yield {
         Monster(
           name,
@@ -162,24 +162,23 @@ object Caster extends LowerPriorityImplicits {
           MagicAttack(magicAttack),
           MagicDefense(magicDefense),
           Luck(luck),
-          DummyAi
+          ai
         )
       }
       case _ ⇒
         Failure(new IllegalArgumentException("config value is no object"))
     }
+  }
 
-    private object DummyAi extends AI {
-      def setup(self: Monster): Interact[Monster] =
-        Interact.unit(self)
-
-      def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-        Interact.unit(BattleAttack.none)
+  implicit val ai: Caster[AI] = new Caster[AI] {
+    override protected def safeCast(x: AnyRef): Try[AI] = {
+      AiLoader(string.unsafeCast(x)).fold(
+        x ⇒ Failure(new IllegalArgumentException(x)), Success(_))
     }
   }
 }
 trait LowerPriorityImplicits {
   implicit def anyRef[A]: Caster[A] = new Caster[A] {
-    def safeCast(x: AnyRef): Try[A] = Try(x.asInstanceOf[A])
+    override protected def safeCast(x: AnyRef): Try[A] = Try(x.asInstanceOf[A])
   }
 }
