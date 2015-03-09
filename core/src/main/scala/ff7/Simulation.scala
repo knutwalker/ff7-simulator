@@ -29,11 +29,11 @@ object Simulation {
   def apply(field: BattleField): Interact[BattleField] =
     playAllRounds.eval(field)
 
-  private val chooseAttacker: State[BattleField, Option[Person]] = State { (bf: BattleField) ⇒
+  val chooseAttacker: State[BattleField, Option[Person]] = State { (bf: BattleField) ⇒
     (bf, bf.heroes.alive)
   }
 
-  private val runAttack: StateT[Interact, BattleField, BattleResult] =
+  val runAttack: StateT[Interact, BattleField, BattleResult] =
     chooseAttacker.mapK[Interact, BattleResult, BattleField] {
       case (bf, Some(a)) ⇒ attack(a, bf.enemies, bf.heroes).map(b ⇒ (bf, b))
       case (bf, None)    ⇒ unit(BattleResult.none).map(b ⇒ (bf, b))
@@ -69,7 +69,7 @@ object Simulation {
     initiateRound >> battleMonad.iterateUntil(playRound)(_.isFinished)
   }
 
-  private def attack(attacker: Person, opponents: Team, allies: Team): Interact[BattleResult] = {
+  def attack(attacker: Person, opponents: Team, allies: Team): Interact[BattleResult] = {
     attacker.chooseAttack(opponents, allies).flatMap {
       case \/-(BattleAttack.Attack(x, t)) ⇒ executeAttack(attacker, x, t)
       case \/-(BattleAttack.None)         ⇒ unit(BattleResult.none)
@@ -79,7 +79,7 @@ object Simulation {
     }
   }
 
-  private def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
+  def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
     attacker.chosenAttack.formulaType match {
       case FormulaType.Physical ⇒
         random(formulas.Physical(attacker, target))
