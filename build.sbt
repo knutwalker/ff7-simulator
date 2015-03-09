@@ -1,7 +1,6 @@
 import com.typesafe.sbt.pgp.PgpKeys._
 import sbt._
 import sbt.Keys._
-import sbtassembly.AssemblyPlugin.defaultShellScript
 import sbtrelease._
 import sbtrelease.ReleasePlugin._
 import sbtrelease.ReleasePlugin.ReleaseKeys._
@@ -44,13 +43,13 @@ lazy val deps = new {
   val content = List(
     "com.typesafe"                 % "config"                     % config     )
 
-  val console = List(
-    "jline"                        % "jline"                      % jline      )
-
   val gui = List(
     "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
     "io.reactivex"                %% "rxscala"                    % rxscala    ,
     "io.reactivex"                 % "rxswing"                    % rxswing    )
+
+  val tui = List(
+    "jline"                        % "jline"                      % jline      )
 
   val core = List(
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
@@ -100,23 +99,23 @@ lazy val monsters = project
   .settings(ff7Settings: _*)
   .dependsOn(equipment)
 
-lazy val console = project
-  .settings(name := "ff7-console")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.console)
-  .dependsOn(algebra)
-
 lazy val gui = project
   .settings(name := "ff7-gui")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.gui)
   .dependsOn(algebra)
 
+lazy val tui = project
+  .settings(name := "ff7-tui")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.tui)
+  .dependsOn(algebra)
+
 lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(characters, console, formulas, gui, monsters)
+  .dependsOn(characters, formulas, gui, monsters, tui)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -135,8 +134,8 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .dependsOn(algebra, api, characters, console, core, equipment, formulas, gui, monsters, tests)
-  .aggregate(algebra, api, characters, console, core, dist, equipment, formulas, gui, monsters, tests)
+  .dependsOn(algebra, api, characters, core, equipment, formulas, gui, monsters, tests, tui)
+  .aggregate(algebra, api, characters, core, dist, equipment, formulas, gui, monsters, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
@@ -168,6 +167,7 @@ lazy val commonSettings = List(
     "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yno-predef" ::
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
   scalacOptions in Test += "-Yrangepos",
+  scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
   javacOptions ++=
     "-source" :: javaVersion.value :: "-target" :: javaVersion.value :: Nil,
   scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(
@@ -179,6 +179,8 @@ lazy val commonSettings = List(
     val name = Project.extract(state).currentRef.project
     (if (name == "parent") "" else name + " ") + "> "
   },
+  initialCommands in console := """import scalaz._, Scalaz._, com.nicta.rng._, ff7._, algebra._, battle._, characters._, monsters._""",
+  initialCommands in consoleQuick := """import scalaz._, Scalaz._, com.nicta.rng._""",
   fork in run := true,
   connectInput in run := true,
   logBuffered := false,

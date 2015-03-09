@@ -22,7 +22,7 @@ import effect.IO
 import algebra._
 import jline.console.ConsoleReader
 
-package object console {
+package object tui {
 
   implicit val ConsoleInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
