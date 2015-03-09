@@ -32,11 +32,11 @@ lazy val deps = new {
   import versions._
 
   val api = List(
-    "org.spire-math"              %% "spire"                      % spire      ,
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless  ,
     "de.knutwalker"               %% "transducers-scala"          % transducer )
 
   val algebra = List(
+    "org.spire-math"              %% "spire"                      % spire      ,
     "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
@@ -162,9 +162,8 @@ lazy val buildSettings = List(
 
 lazy val commonSettings = List(
   scalacOptions ++=
-    "-encoding" ::  "UTF-8" ::
+    "-encoding" ::  "UTF-8" :: "-language:_" ::
     "-deprecation" :: "-explaintypes" :: "-feature" :: "-unchecked" ::
-    "-language:existentials" :: "-language:higherKinds" :: "-language:implicitConversions" :: "-language:postfixOps" ::
     "-Xcheckinit" :: "-Xfatal-warnings" :: "-Xfuture" :: "-Xlint" ::
     "-Yclosure-elim" :: "-Ydead-code" :: "-Yno-adapted-args" :: "-Yno-predef" ::
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,

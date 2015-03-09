@@ -17,30 +17,94 @@
 package ff7
 package algebra
 
-import scalaz._
+import scalaz._, Scalaz._, Leibniz._, effect._
 
 import com.nicta.rng.Rng
+import spire.math.Rational
 
+sealed trait Interact[A] {
+  val free: Free.FreeC[InteractOp, A]
+
+  def map[B](f: A ⇒ B): Interact[B] =
+    Interact(free map f)
+
+  def as[B](f: ⇒ B): Interact[B] =
+    >|(f)
+
+  def >|[B](f: ⇒ B): Interact[B] =
+    map(_ ⇒ f)
+
+  def flatMap[B](f: A ⇒ Interact[B]): Interact[B] =
+    Interact(free flatMap (f(_).free))
+
+  def >>=[B](f: A ⇒ Interact[B]): Interact[B] =
+    flatMap(f)
+
+  def andThen[B](f: ⇒ Interact[B]): Interact[B] =
+    >>(f)
+
+  def >>[B](f: ⇒ Interact[B]): Interact[B] =
+    flatMap(_ ⇒ f)
+
+  def ap[X](f: Interact[A ⇒ X]): Interact[X] =
+    f.flatMap(ff ⇒ map(aa ⇒ ff(aa)))
+
+  def zip[X](q: Interact[X]): Interact[(A, X)] =
+    zipWith(q)(a ⇒ (a, _))
+
+  def zipWith[B, C](r: Interact[B])(f: A ⇒ B ⇒ C): Interact[C] =
+    r.ap(map(f))
+
+  def |+|[AA >: A](x: Interact[AA])(implicit S: Semigroup[AA]): Interact[AA] =
+    flatMap(a ⇒ x.map(b ⇒ S.append(a, b)))
+
+  def ***[X](x: Interact[X]): Interact[(A, X)] =
+    zip(x)
+
+  def flatten[AA >: A, B](implicit f: AA === Interact[B]): Interact[B] =
+    flatMap(f)
+
+  def run[M[_]](implicit f: InteractOp ~> M, M: Monad[M]): M[A] =
+    Free.runFC(free)(f)
+
+  def runIO: IO[A] =
+    run[IO](Interact.defaultInterpreter, Monad[IO])
+}
 
 object Interact {
-
-  implicit val monad: Monad[Interact] =
-    Free.freeMonad[InteractMonad]
+  private[algebra] def apply[A](f: Free.FreeC[InteractOp, A]): Interact[A] =
+    new Interact[A] { val free = f }
 
   def printPersons(ps: List[UiItem], id: TeamId): Interact[Unit] =
-    Free.liftFC(PrintPersons(ps, id))
+    apply(Free.liftFC(PrintPersons(ps, id)))
 
   def printString(s: String): Interact[Unit] =
-    Free.liftFC(PrintString(s))
+    apply(Free.liftFC(PrintString(s)))
 
   def random[A](rng: Rng[A]): Interact[A] =
-    Free.liftFC(Random(rng))
+    apply(Free.liftFC(Random(rng)))
 
   def readInput: Interact[Input] =
-    Free.liftFC(ReadInput)
+    apply(Free.liftFC(ReadInput))
 
   def log(s: String, l: LogLevel, ex: Option[Throwable]): Interact[Unit] =
-    Free.liftFC(Log(s, l, ex))
+    apply(Free.liftFC(Log(s, l, ex)))
+
+  def unit[A](a: A): Interact[A] =
+    apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
+
+  def choose[A](num: Long, denom: Long, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
+     choose(Rational(num, denom), whenHit, whenMiss)
+
+  def choose[A](r: Rational, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
+     chance(r).map(c ⇒ if (c) whenHit else whenMiss)
+
+  def chance(num: Long, denom: Long): Interact[Boolean] =
+     chance(Rational(num, denom))
+
+  def chance(r: Rational): Interact[Boolean] =
+     random(Rng.chooselong(1L, r.denominatorAsLong)
+       .map(i ⇒ i <= r.numeratorAsLong))
 
   def debug(s: String): Interact[Unit] =
     log(s, LogLevel.Debug, None)
@@ -54,9 +118,39 @@ object Interact {
   def error(s: String, ex: Throwable): Interact[Unit] =
     log(s, LogLevel.Error, Some(ex))
 
-  def unit[A](a: A): Interact[A] =
-    Free.point[InteractMonad, A](a)
-
   def run[A, M[_]](prog: Interact[A])(implicit f: InteractOp ~> M, M: Monad[M]): M[A] =
-    Free.runFC(prog)(f)
+    prog.run[M]
+
+  implicit val InteractMonad: Monad[Interact] =
+    new Monad[Interact] {
+      def bind[A, B](a: Interact[A])(f: A ⇒ Interact[B]) =
+        a flatMap f
+      def point[A](a: ⇒ A) =
+        unit(a)
+    }
+
+  implicit def InteractSemigroup[A](implicit S: Semigroup[A]): Semigroup[Interact[A]] =
+    new Semigroup[Interact[A]] {
+      def append(i1: Interact[A], i2: ⇒ Interact[A]) =
+        i1 |+| i2
+    }
+
+  implicit def InteractMonoid[A](implicit M: Monoid[A]): Monoid[Interact[A]] =
+    new Monoid[Interact[A]] {
+      def append(i1: Interact[A], i2: ⇒ Interact[A]) =
+        i1 |+| i2
+
+      def zero =
+        unit(M.zero)
+    }
+
+  private val defaultInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
+    def apply[X](fa: InteractOp[X]): IO[X] = fa match {
+      case PrintPersons(ps, _) ⇒ ps.traverse_(p ⇒ IO.putStrLn(p.text))
+      case PrintString(s)      ⇒ IO.putStrLn(s)
+      case Random(rng)         ⇒ rng.run
+      case ReadInput           ⇒ IO(Input.Ok)
+      case Log(_, _, _)        ⇒ IO(())
+    }
+  }
 }
