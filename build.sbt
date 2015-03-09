@@ -41,7 +41,7 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng        )
 
-  val content = List(
+  val playables = List(
     "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
@@ -80,26 +80,16 @@ lazy val api = project
   .settings(libraryDependencies ++= deps.api)
   .dependsOn(algebra)
 
-lazy val equipment = project
-  .settings(name := "ff7-equipment")
+lazy val playables = project
+  .settings(name := "ff7-playables")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.content)
+  .settings(libraryDependencies ++= deps.playables)
   .dependsOn(api)
 
 lazy val formulas = project
   .settings(name := "ff7-formulas")
   .settings(ff7Settings: _*)
   .dependsOn(api)
-
-lazy val characters = project
-  .settings(name := "ff7-characters")
-  .settings(ff7Settings: _*)
-  .dependsOn(equipment)
-
-lazy val monsters = project
-  .settings(name := "ff7-monsters")
-  .settings(ff7Settings: _*)
-  .dependsOn(equipment)
 
 lazy val gui = project
   .settings(name := "ff7-gui")
@@ -117,7 +107,7 @@ lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(characters, formulas, gui, monsters, tui)
+  .dependsOn(formulas, gui, playables, tui)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -136,8 +126,8 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .dependsOn(algebra, api, characters, core, equipment, formulas, gui, monsters, tests, tui)
-  .aggregate(algebra, api, characters, core, dist, equipment, formulas, gui, monsters, tests, tui)
+  .dependsOn(algebra, api, core, formulas, gui, playables, tests, tui)
+  .aggregate(algebra, api, core, dist, formulas, gui, playables, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
