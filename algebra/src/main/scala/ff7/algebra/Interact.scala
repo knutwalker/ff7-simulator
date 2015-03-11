@@ -69,6 +69,9 @@ sealed trait Interact[A] {
 
   def runIO: IO[A] =
     run[IO](Interact.defaultInterpreter, Monad[IO])
+
+  def unsafeRun(): A =
+    runIO.unsafePerformIO()
 }
 
 object Interact {
@@ -90,7 +93,7 @@ object Interact {
   def log(s: String, l: LogLevel, ex: Option[Throwable]): Interact[Unit] =
     apply(Free.liftFC(Log(s, l, ex)))
 
-  def unit[A](a: A): Interact[A] =
+  def unit[A](a: ⇒ A): Interact[A] =
     apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
 
   def choose[A](num: Long, denom: Long, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =

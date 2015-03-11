@@ -27,7 +27,7 @@ package object tui {
   implicit val ConsoleInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case PrintPersons(ps, _) ⇒ printPersons(ps)
-      case PrintString(s)      ⇒ IO.putStrLn(s)
+      case PrintString(s)      ⇒ IO.putStrLn(s"  ~~ ${Console.GREEN}$s${Console.RESET}")
       case Random(rng)         ⇒ rng.run
       case ReadInput           ⇒ readInput
       case Log(_, _, _)        ⇒ IO(())

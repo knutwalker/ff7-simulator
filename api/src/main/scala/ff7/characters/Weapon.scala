@@ -15,7 +15,9 @@
  */
 
 package ff7
-package stats
+package characters
+
+import stats.{Attack, AttackPercent, MagicAttack, Power}
 
 final case class Weapon(
   name: String,

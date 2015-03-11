@@ -18,13 +18,12 @@ package ff7
 
 import algebra._, LogLevel._, Interact._
 import battle.{BattleField, Team}
-import characters.Characters
-import monsters.Monsters
 
 import scalaz._
 import Scalaz._
 import effect.{IO, SafeApp}
 
+import com.nicta.rng.Rng
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
@@ -33,11 +32,14 @@ import util.Try
 object Main extends SafeApp {
   val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
-  val party = Team(Characters.cloud2.get, Characters.barret.get)
-  val enemies = Team(
-    Monsters.sweeper.get.copy(name = "Sweeper A"),
-    Monsters.sweeper.get.copy(name = "Sweeper B")
-  )
+  def party = Characters.team("cloud2", "barret").toIO
+
+  def enemies = Encounters.midgar1.traverse[Rng, NonEmptyList[String], Team] { es ⇒
+    for {
+      e ← Rng.oneofL(es)
+      g ← Rng.oneofL(e.groups)
+    } yield g.monsters
+  }.run.flatMap(_.toIO)
 
   def program(field: BattleField) = for {
     _      ← debug("Starting simulation")
@@ -53,21 +55,25 @@ object Main extends SafeApp {
   }
 
   def runRounds(repetitions: Int, ui: UI): IO[Unit] = {
-    StateT.stateTMonadState[RoundState, IO]
+    val st = StateT.stateTMonadState[RoundState, IO]
       .iterateUntil(runRoundState(ui)) { rs ⇒
         rs.rounds >= repetitions || rs.heroes.alive.isEmpty
-    }.eval(RoundState(party, 0, 0)) >>= { rs ⇒ IO {
+    }
+    for {
+      p ← party
+      rs ← st.eval(RoundState(p, 0, 0))
+    } yield {
       logger.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
-    }}
+    }
   }
 
   def runRoundState(ui: UI): StateT[IO, RoundState, RoundState] =
-    StateT(rs ⇒ {
-      runRound(ui, BattleField.init(rs.heroes, enemies))
-        .map(f ⇒ {
-          val team = if (f.enemies.isHero) f.enemies else f.heroes
-          RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
-      })
+    StateT(rs ⇒ for {
+      es ← enemies
+      f ← runRound(ui, BattleField.init(rs.heroes, es))
+    } yield {
+      val team = if (f.enemies.isHero) f.enemies else f.heroes
+      RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
     })
 
   def runRound(ui: UI, field: BattleField): IO[BattleField] = {

@@ -104,6 +104,8 @@ lazy val tui = project
   .dependsOn(algebra)
 
 lazy val core = project
+  .configs(RunDebug)
+  .settings(inConfig(RunDebug)(Defaults.compileSettings): _*)
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
@@ -123,6 +125,8 @@ lazy val dist = project
   )
 
 lazy val parent = project.in(file("."))
+  .configs(RunDebug)
+  .settings(inConfig(RunDebug)(Defaults.compileSettings): _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
@@ -140,6 +144,8 @@ lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
 lazy val projectMaintainer = SettingKey[String]("Maintainer")
 lazy val buildFatJar = SettingKey[Boolean]("true builds a fat jar, false builds only an assembled jar sans dependencies")
+
+lazy val RunDebug = config("debug") extend Runtime
 
 lazy val buildSettings = List(
         organization := "de.knutwalker",
@@ -173,10 +179,13 @@ lazy val commonSettings = List(
   },
   initialCommands in console := """import scalaz._, Scalaz._, com.nicta.rng._, ff7._, algebra._, battle._, characters._, monsters._""",
   initialCommands in consoleQuick := """import scalaz._, Scalaz._, com.nicta.rng._""",
-  fork in run := true,
-  connectInput in run := true,
   logBuffered := false,
-  resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+  resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
+          fork in run       := true,
+  connectInput in run       := true,
+   javaOptions in RunDebug ++= List("-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"),
+          fork in RunDebug  := true,
+  connectInput in RunDebug  := true
 )
 
 lazy val publishSettings = List(
@@ -308,4 +317,5 @@ lazy val buildsUberJar = List(
 )
 
 lazy val ff7Settings =
-  buildSettings ++ commonSettings ++ publishSettings ++ releaseSettings ++ headerSettings ++ buildsUberJar
+  buildSettings ++ commonSettings ++
+    publishSettings ++ releaseSettings ++ headerSettings ++ buildsUberJar

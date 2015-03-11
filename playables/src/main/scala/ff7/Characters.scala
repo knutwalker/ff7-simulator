@@ -15,6 +15,21 @@
  */
 
 package ff7
-package characters
 
-object Characters extends ConfigLoader[Character]("ff7.characters")
+import battle.Team
+import characters.Character
+
+import scalaz._, Scalaz._
+
+object Characters extends ConfigLoader[Character]("ff7.characters", "Character") {
+
+  def team(first: String): Val[Team] = selectDynamic(first).map(Team(_))
+
+  def team(first: String, second: String): Val[Team] =
+    (selectDynamic(first) |@| selectDynamic(second)) { (f, s) ⇒ Team(f, s) }
+
+  def team(first: String, second: String, third: String): Val[Team] =
+    (selectDynamic(first) |@| selectDynamic(second) |@| selectDynamic(third)) {
+      (f, s, t) ⇒ Team(f, s, t)
+    }
+}

@@ -15,11 +15,7 @@
  */
 
 package ff7
-package stats
 
-final case class Armour(
-  name: String,
-  defense: Defense,
-  defensePercent: DefensePercent,
-  magicDefense: MagicDefense,
-  magicDefensePercent: MagicDefensePercent)
+import characters.Weapon
+
+object Weapons extends ConfigLoader[Weapon]("ff7.weapons", "Weapon")

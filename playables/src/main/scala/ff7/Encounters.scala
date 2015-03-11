@@ -15,8 +15,9 @@
  */
 
 package ff7
-package weapons
 
-import stats.Weapon
+import battle.Encounter
 
-object Weapons extends ConfigLoader[Weapon]("ff7.weapons")
+import scalaz.NonEmptyList
+
+object Encounters extends ConfigLoader[NonEmptyList[Encounter]]("ff7.encounters", "Encounter")

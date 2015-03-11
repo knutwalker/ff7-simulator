@@ -17,4 +17,12 @@
 package ff7
 package monsters
 
-object Monsters extends ConfigLoader[Monster]("ff7.monsters.midgar1")
+import algebra.Interact
+import battle.{BattleAttack, Team}
+
+object NoopAi extends AI {
+  def setup(self: Monster): Interact[Monster] =
+    Interact.unit(self)
+  def apply(self: Monster, targets: Team): Interact[BattleAttack] =
+    Interact.unit(BattleAttack.none)
+}

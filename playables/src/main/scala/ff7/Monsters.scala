@@ -15,8 +15,7 @@
  */
 
 package ff7
-package monsters
 
-import battle.Encounter
+import monsters.Monster
 
-object Encounters extends ConfigLoader[List[Encounter]]("ff7.encounters")
+object Monsters extends ConfigLoader[Monster]("ff7.monsters.midgar1", "Monster")
