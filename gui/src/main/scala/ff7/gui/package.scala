@@ -84,6 +84,7 @@ package object gui {
         case Key.Left  | Key.A | Key.H ⇒ Input.Left
         case Key.Right | Key.D | Key.L ⇒ Input.Right
         case Key.Enter | Key.Space     ⇒ Input.Ok
+        case Key.Escape                ⇒ Input.Cancel
         case Key.Q                     ⇒ Input.Quit
         case Key.BackSpace             ⇒ Input.Undo
       }

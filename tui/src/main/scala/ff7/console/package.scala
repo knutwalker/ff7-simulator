@@ -21,6 +21,7 @@ import effect.IO
 
 import algebra._
 import jline.console.ConsoleReader
+import jline.internal.NonBlockingInputStream
 
 package object tui {
 
@@ -52,28 +53,30 @@ package object tui {
     IndexedStateT.stateTMonadState[Unit, IO]
       .iterateUntil(readDirectionS)(_.isDefined).map(_.get)
 
-  private def readsDirection: IO[Option[Input]] = readChar flatMap {
-    case 10 | 13   ⇒ IO(some(Input.Ok))
-    case 113       ⇒ IO(some(Input.Quit))
-    case 127       ⇒ IO(some(Input.Undo))
-    case 27        ⇒ readEscapedCursor
-    case 104 | 97  ⇒ IO(some(Input.Left))
-    case 106 | 115 ⇒ IO(some(Input.Down))
-    case 107 | 119 ⇒ IO(some(Input.Up))
-    case 108 | 100 ⇒ IO(some(Input.Right))
-    case _         ⇒ IO(none)
+  private def readsDirection: IO[Option[Input]] = readChar map {
+    case 10 | 13 | 32   ⇒ Input.ok.some     // 10,13 = Enter, 32 = Space
+    case 113            ⇒ Input.quit.some   // 113 = 1
+    case 127            ⇒ Input.undo.some   // 127 = Backspace
+    case 27             ⇒ Input.cancel.some // 27 = Escape
+    case 68 | 104 | 97  ⇒ Input.left.some   // 68 = Left, 104 = h, 97 = a
+    case 66 | 106 | 115 ⇒ Input.down.some   // 66 = Down, 106 = j, 115 = s
+    case 65 | 107 | 119 ⇒ Input.up.some     // 65 = Up, 107 = k, 119 = w
+    case 67 | 108 | 100 ⇒ Input.right.some  // 67 = Right, 108 = l, 100 = d
+    case _              ⇒ none[Input]
   }
 
-  private def readEscapedCursor: IO[Option[Input]] = readChar flatMap {
-    case 91 ⇒ readChar map {
-      case 65 ⇒ some(Input.Up)
-      case 66 ⇒ some(Input.Down)
-      case 67 ⇒ some(Input.Right)
-      case 68 ⇒ some(Input.Left)
-      case _  ⇒ none
-    }
-    case _  ⇒ IO(none)
+  private def readChar = IO {
+    val c = reader.readCharacter()
+    if (c == 27) {  // escape
+      val nbStream = reader.getInput.asInstanceOf[NonBlockingInputStream]
+      val n = nbStream.peek(15)
+      if (n == 91) {
+        nbStream.read()
+        val m = nbStream.peek(15)
+        if (m != -2) { // -2 == timeout
+          nbStream.read()
+        } else c
+      } else c
+    } else c
   }
-
-  private def readChar = IO(reader.readCharacter())
 }

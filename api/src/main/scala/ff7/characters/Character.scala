@@ -90,18 +90,19 @@ object Character {
       _      ← printPersons(formatPersons(aliveAllies, currentAttacker), TeamId.Allies)
       _      ← printString(s"$a: Choose your enemy")
       result ← readEnemy(persons)
-    } yield result.map(t ⇒ BattleAttack(a, t.asTarget))
+    } yield result.map(_.cata(p ⇒ BattleAttack(a, p.asTarget), BattleAttack.none))
   }
 
-  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Input.Special \/ Person] = {
+  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Input.Special \/ Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
     printEnemies(persons.list, bounded).flatMap {
-      case Input.Quit ⇒ unit(\/.left(Input.Quit))
-      case Input.Undo ⇒ unit(\/.left(Input.Undo))
-      case Input.Ok   ⇒ unit(\/.right(persons.list(bounded)))
-      case Input.Up   ⇒ readEnemy(persons, bounded - 1)
-      case Input.Down ⇒ readEnemy(persons, bounded + 1)
-      case _          ⇒ readEnemy(persons, bounded)
+      case Input.Quit   ⇒ unit(\/.left(Input.Quit))
+      case Input.Undo   ⇒ unit(\/.left(Input.Undo))
+      case Input.Cancel ⇒ unit(\/.right(empty))
+      case Input.Ok     ⇒ unit(\/.right(persons.list(bounded).just))
+      case Input.Up     ⇒ readEnemy(persons, bounded - 1)
+      case Input.Down   ⇒ readEnemy(persons, bounded + 1)
+      case _            ⇒ readEnemy(persons, bounded)
     }
   }
 

@@ -22,7 +22,7 @@ import algebra.Interact._
 import battle._
 import stats._
 
-import scalaz.\/
+import scalaz._, Scalaz._
 
 final case class Monster(
   name: String,
@@ -55,11 +55,9 @@ final case class Monster(
   val isHero: Boolean = false
 
   def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
-    val alive = opponents.alives
-    alive.headOption
-      .map(a ⇒ ai(this, opponents.copy(first = a, rest = alive.tail)))
-      .getOrElse(unit(BattleAttack.None))
-      .map(\/.right)
+    opponents.alives.toNel
+      .fold(unit(BattleAttack.none))(ops ⇒ ai(this, ops.toTeam))
+      .map(_.right)
   }
 
   def hit(h: Hit): Person = h match {
