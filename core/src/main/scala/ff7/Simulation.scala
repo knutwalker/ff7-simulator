@@ -95,22 +95,23 @@ object Simulation {
   }
 
   private def evaluateAttack(bf: BattleField, br: BattleResult, oa: Person, a: Attacker, t: Target, h: Hit): Interact[BattleField] = {
-    val enemies = bf.enemies.updated(t.asPerson, t.asPerson.hit(h))
+    val target = t.asPerson
+    val enemies = bf.enemies.updated(target, target.hit(h))
     val heroes = bf.heroes.updated(oa, a.asPerson)
     val b = bf.round(br).copy(heroes = enemies, enemies = heroes).cycle
     val msg = h match {
       case Hit.Missed ⇒
-        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] but missed"
+        s"$oa attacked $target using [${a.chosenAttack.name}] but missed"
       case Hit.Hits(x) ⇒
-        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit with $x damage"
+        s"$oa attacked $target using [${a.chosenAttack.name}] and hit with $x damage"
       case Hit.Critical(x) ⇒
-        s"$oa attacked ${t.asPerson} using [${a.chosenAttack.name}] and hit critically with $x damage"
+        s"$oa attacked $target using [${a.chosenAttack.name}] and hit critically with $x damage"
     }
     Interact.printString(msg) >| b
   }
 
   private def evaluateNoAttack(bf: BattleField, br: BattleResult): Interact[BattleField] = {
-    val b = bf.round(br).cycle
+    val b = bf.round(br).swap.cycle
     val msg = "No attack happened"
     Interact.printString(msg) >| b
   }

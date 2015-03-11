@@ -24,6 +24,9 @@ final case class BattleField(heroes: Team, enemies: Team, round: Int, history: L
   def round(br: BattleResult): BattleField =
     copy(round = round + 1, history = copy(result = Some(br)) :: history)
 
+  def swap: BattleField =
+    copy(heroes = enemies, enemies = heroes)
+
   def cycle: BattleField =
     copy(heroes = heroes.cycle)
 
