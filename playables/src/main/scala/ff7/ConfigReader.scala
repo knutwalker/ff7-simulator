@@ -36,6 +36,8 @@ trait ConfigReader[A] {
 object ConfigReader {
   def apply[A](implicit A: ConfigReader[A]): ConfigReader[A] = A
 
+  import ConfigReaderImplicits._
+
   implicit def list[A](implicit A: ConfigReader[A]): ConfigReader[List[A]] = new ConfigReader[List[A]] {
     def cast(ov: ConfigValue): Val[List[A]] = ov match {
       case v: ConfigList ⇒
@@ -264,4 +266,14 @@ object ConfigReader {
   sealed trait Ref
 
   private def get(v: ConfigValue): String = String.valueOf(v.unwrapped())
+}
+object ConfigReaderImplicits {
+  implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
+    def nel[A](key: String)(implicit A: ConfigReader[A]): Val[A] =
+      if (v.containsKey(key)) A.cast(v.get(key))
+      else s"$v does not contain $key".failureNel
+    def nel_?[A](key: String)(implicit A: ConfigReader[A]): Val[Option[A]] =
+      if (v.containsKey(key)) A.cast(v.get(key)).map(some)
+      else none[A].successNel
+  }
 }

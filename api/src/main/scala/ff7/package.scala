@@ -22,10 +22,8 @@ import effect.IO
 import Isomorphism._
 import Validation._
 
-import com.typesafe.config.{ConfigObject, ConfigValue}
-
-
 package object ff7 {
+
   type TeamF[x] = Team
 
   type Val[+A] = Validation[NonEmptyList[String], A]
@@ -38,27 +36,6 @@ package object ff7 {
       }
       val from: (NonEmptyList[Person]) ⇒ Team = nel ⇒ Team(nel.head, nel.tail, None)
     }
-
-  implicit class NelTeam(val t: Team) extends AnyVal {
-    def toNel: NonEmptyList[Person] = teamNelIso.to(t)
-  }
-
-  implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
-    def toTeam: Team = teamNelIso.from(ps)
-  }
-
-  implicit class CastConfigValue(val v: ConfigValue) extends AnyVal {
-    def apply[A](implicit A: ConfigReader[A]): Val[A] = A.cast(v)
-  }
-
-  implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
-    def nel[A](key: String)(implicit A: ConfigReader[A]): Val[A] =
-      if (v.containsKey(key)) A.cast(v.get(key))
-      else s"$v does not contain $key".failureNel
-    def nel_?[A](key: String)(implicit A: ConfigReader[A]): Val[Option[A]] =
-      if (v.containsKey(key)) A.cast(v.get(key)).map(some)
-      else none[A].successNel
-  }
 
   private[this] def justMessage[A, F[_, _]: Bifunctor](f: F[Throwable, A]): F[String, A] =
     Bifunctor[F].leftMap(f)(_.getMessage)
@@ -77,14 +54,27 @@ package object ff7 {
   }
 
   implicit final class ValidationOps[E, A](val v: NonEmptyList[E] \?/ A) extends AnyVal {
-    def interact(a: => A): Interact[A] = v match {
-      case Success(x) ⇒ Interact.unit(x)
-      case Failure(es) ⇒ es.traverse_[Interact](e ⇒ Interact.warn(e.toString)) >| a
-    }
-
     def toIO: IO[A] = v match {
       case Success(x) ⇒ IO(x)
       case Failure(es) ⇒ es.traverse_[IO](e ⇒ IO.putStrLn(e.toString)) >> IO.throwIO(new RuntimeException)
     }
+  }
+
+  implicit class NelTeam(val t: Team) extends AnyVal {
+    def toNel: NonEmptyList[Person] = teamNelIso.to(t)
+  }
+
+  implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
+    def toTeam: Team = teamNelIso.from(ps)
+  }
+
+  implicit class AnyInteractOps[A](val x: A) extends AnyVal {
+    def interact: Interact[A] = Interact.unit(x)
+  }
+
+  implicit class StringInteractOps(val x: String) extends AnyVal {
+    def debug: Interact[Unit] = Interact.debug(x)
+    def info: Interact[Unit] = Interact.info(x)
+    def warn: Interact[Unit] = Interact.warn(x)
   }
 }
