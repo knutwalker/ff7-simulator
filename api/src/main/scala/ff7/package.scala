@@ -18,7 +18,6 @@ import ff7.algebra.Interact
 import ff7.battle.{Person, Team}
 
 import scalaz._, Scalaz._
-import effect.IO
 import Isomorphism._
 import Validation._
 
@@ -54,9 +53,9 @@ package object ff7 {
   }
 
   implicit final class ValidationOps[E, A](val v: NonEmptyList[E] \?/ A) extends AnyVal {
-    def toIO: IO[A] = v match {
-      case Success(x) ⇒ IO(x)
-      case Failure(es) ⇒ es.traverse_[IO](e ⇒ IO.putStrLn(e.toString)) >> IO.throwIO(new RuntimeException)
+    def toInteract: Interact[A] = v match {
+      case Success(x) ⇒ Interact.point(x)
+      case Failure(es) ⇒ Interact.fail(es.list.mkString("\n", "\n", "\n"))
     }
   }
 

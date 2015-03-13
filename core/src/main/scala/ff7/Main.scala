@@ -23,25 +23,33 @@ import scalaz._
 import Scalaz._
 import effect.{IO, SafeApp}
 
-import com.nicta.rng.Rng
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
 import util.Try
 
 object Main extends SafeApp {
-  val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
+  private val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
-  def party = Characters.team("cloud2", "barret").toIO
-
-  def enemies = Encounters.midgar1.traverse[Rng, NonEmptyList[String], Team] { es ⇒
+  override def runl(args: List[String]): IO[Unit] = {
+    val Options(repetitions, ui) = parseOpts(args)
     for {
-      e ← Rng.oneofL(es)
-      g ← Rng.oneofL(e.groups)
-    } yield g.monsters
-  }.run.flatMap(_.toIO)
+      _ ← ui.start
+      _ ← runRoundsIO(repetitions, ui)
+      _ ← ui.stop
+    } yield ()
+  }
 
-  def program(field: BattleField) = for {
+  def party = Characters.team("cloud2", "barret").toInteract
+
+  def enemies = Encounters.midgar1.traverse[Interact, NonEmptyList[String], Team] { es ⇒
+    for {
+      e ← Interact.oneOfL(es)
+      g ← Interact.oneOfL(e.groups)
+    } yield g.monsters
+  }.flatMap(_.toInteract)
+
+  def program(field: BattleField): Interact[BattleField] = for {
     _      ← debug("Starting simulation")
     _      ← showMessage(s"Starting a new round with $field")
     result ← Simulation(field)
@@ -49,37 +57,36 @@ object Main extends SafeApp {
     _      ← debug("Simulation finished")
   } yield result
 
-  override def runl(args: List[String]): IO[Unit] = {
-    val Options(repetitions, ui) = parseOpts(args)
-    ui.start >> runRounds(repetitions, ui) >> ui.stop
+  def runRoundsIO(repetitions: Int, ui: UI): IO[RoundState] = {
+    import ui.interpreter
+    runRounds(repetitions).run[IO]
   }
 
-  def runRounds(repetitions: Int, ui: UI): IO[Unit] = {
-    val st = StateT.stateTMonadState[RoundState, IO]
-      .iterateUntil(runRoundState(ui)) { rs ⇒
-        rs.rounds >= repetitions || rs.heroes.alive.isEmpty
-    }
+  def runRounds(repetitions: Int): Interact[RoundState] = {
     for {
-      p ← party
-      rs ← st.eval(RoundState(p, 0, 0))
-    } yield {
-      logger.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
-    }
+      p  ← party
+      rs ← runAllRoundsState(repetitions).eval(RoundState(p, 0, 0))
+      _  ← Interact.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
+    } yield rs
   }
 
-  def runRoundState(ui: UI): StateT[IO, RoundState, RoundState] =
+  def runAllRoundsState(repetitions: Int): StateT[Interact, RoundState, RoundState] =
+    StateT.stateTMonadState[RoundState, Interact]
+      .iterateUntil(runRoundState) { rs ⇒
+      rs.rounds >= repetitions || rs.heroes.alive.isEmpty
+    }
+
+  val runRoundState: StateT[Interact, RoundState, RoundState] =
     StateT(rs ⇒ for {
       es ← enemies
-      f ← runRound(ui, BattleField.init(rs.heroes, es))
+      f ← runRound(BattleField.init(rs.heroes, es))
     } yield {
       val team = if (f.enemies.isHero) f.enemies else f.heroes
       RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
     })
 
-  def runRound(ui: UI, field: BattleField): IO[BattleField] = {
-    import ui.interpreter
-    Interact.run(program(field))
-  }
+  def runRound(field: BattleField): Interact[BattleField] =
+    program(field)
 
   private def parseOpts(args: List[String]): Options =
     args.foldLeft(Options(1, GUI)) { (opts, arg) ⇒
@@ -112,7 +119,7 @@ object Main extends SafeApp {
       LoggingInterpreter(logger, logPrints = true, gui.GuiInterpreter)
   }
 
-  def LoggingInterpreter(log: Logger, logPrints: Boolean, delegate: InteractOp ~> IO) = new (InteractOp ~> IO) {
+  private def LoggingInterpreter(log: Logger, logPrints: Boolean, delegate: InteractOp ~> IO) = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case Log(x, Debug, Some(ex))     ⇒ IO(log.debug(x, ex))
       case Log(x, Debug, None)         ⇒ IO(log.debug(x))
