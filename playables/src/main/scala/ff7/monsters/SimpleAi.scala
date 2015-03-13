@@ -20,23 +20,20 @@ package monsters
 import algebra._
 import battle.{Team, Person, MonsterAttack, BattleAttack}
 
-import com.nicta.rng.Rng
-
 trait SimpleAi extends AI {
-  def attack: Rng[MonsterAttack]
-  def attack(self: Monster): Rng[MonsterAttack] = attack
-  def target(targets: Team): Rng[Person] = Rng.oneofL(targets.toNel)
+  def attack: Interact[MonsterAttack]
+  def attack(self: Monster): Interact[MonsterAttack] = attack
+  def target(targets: Team): Interact[Person] = Interact.oneOfL(targets.toNel)
   def modify(self: Monster): Monster = self
 
   final def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
     val tar = target(targets)
     val att = attack(self)
     val mon = modify(self)
-    val bat = tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
-    Interact.random(bat)
+    tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
   }
 
   def setup(self: Monster): Interact[Monster] = Interact.unit(self)
 
-  implicit protected def liftRng[A](a: A): Rng[A] = Rng.insert(a)
+  implicit protected def liftInteract[A](a: A): Interact[A] = Interact.unit(a)
 }

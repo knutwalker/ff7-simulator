@@ -67,7 +67,7 @@ sealed trait Interact[A] {
     flatMap(f)
 
   def run[M[_]](implicit f: InteractOp ~> M, M: Monad[M]): M[A] =
-    Free.runFC(free)(f)
+    Free.runFC(free)(f)(M)
 
   def runIO: IO[A] =
     run[IO](Interact.defaultInterpreter, Monad[IO])
@@ -86,30 +86,36 @@ object Interact {
   def showMessage(s: String): Interact[Unit] =
     apply(Free.liftFC(ShowMessage(s)))
 
-  def random[A](rng: Rng[A]): Interact[A] =
-    apply(Free.liftFC(Random(rng)))
-
   def readInput: Interact[Input] =
     apply(Free.liftFC(ReadInput))
 
   def log(s: String, l: LogLevel, ex: Option[Throwable]): Interact[Unit] =
     apply(Free.liftFC(Log(s, l, ex)))
 
+  def chooseInt(lowerInclusive: Int, upperInclusive: Int): Interact[Int] =
+    apply(Free.liftFC(ChooseInt(lowerInclusive, upperInclusive)))
+
+  def oneOf[A](xs: A*): Interact[A] =
+    chooseInt(0, xs.size - 1) map xs
+
+  def oneOfL[A](x: NonEmptyList[A]): Interact[A] =
+    chooseInt(0, x.size - 1) map x.list
+
   def unit[A](a: ⇒ A): Interact[A] =
     apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
 
-  def choose[A](num: Long, denom: Long, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
-     choose(Rational(num, denom), whenHit, whenMiss)
+  def choose[A](num: Int, denom: Int, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
+    choose(Rational(num.toLong, denom.toLong), whenHit, whenMiss)
 
   def choose[A](r: Rational, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
-     chance(r).map(c ⇒ if (c) whenHit else whenMiss)
+    chance(r).map(c ⇒ if (c) whenHit else whenMiss)
 
-  def chance(num: Long, denom: Long): Interact[Boolean] =
-     chance(Rational(num, denom))
+  def chance(num: Int, denom: Int): Interact[Boolean] =
+    chance(Rational(num.toLong, denom.toLong))
 
   def chance(r: Rational): Interact[Boolean] =
-     random(Rng.chooselong(1L, r.denominatorAsLong)
-       .map(i ⇒ i <= r.numeratorAsLong))
+    chooseInt(1, r.denominatorAsLong.toInt)
+      .map(_ <= r.numeratorAsLong)
 
   def debug(s: String): Interact[Unit] =
     log(s, LogLevel.Debug, None)
@@ -153,7 +159,7 @@ object Interact {
     def apply[X](fa: InteractOp[X]): IO[X] = fa match {
       case ShowItems(ps, _) ⇒ ps.traverse_(p ⇒ IO.putStrLn(p.text))
       case ShowMessage(s)   ⇒ IO.putStrLn(s)
-      case Random(rng)      ⇒ rng.run
+      case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
       case ReadInput        ⇒ IO(Input.Ok)
       case Log(_, _, _)     ⇒ IO(())
     }

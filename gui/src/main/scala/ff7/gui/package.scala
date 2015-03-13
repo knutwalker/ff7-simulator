@@ -22,6 +22,7 @@ import algebra.InteractOp._
 import scalaz.effect.IO
 import scalaz.~>
 
+import com.nicta.rng.Rng
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.subjects.PublishSubject
 import rx.lang.scala.{Observable, Observer, Scheduler}
@@ -40,7 +41,7 @@ package object gui {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case ShowItems(ps, id) ⇒ printsPersons(ps, id)
       case ShowMessage(s)    ⇒ printsString(s)
-      case Random(rng)       ⇒ rng.run
+      case ChooseInt(l, u)   ⇒ Rng.chooseint(l, u).run
       case ReadInput         ⇒ readsInput
       case Log(_, _, _)      ⇒ IO(())
     }

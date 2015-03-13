@@ -20,24 +20,7 @@ package monsters
 import algebra.Interact
 import battle.{Team, BattleAttack}
 
-import com.nicta.rng.Rng
-import spire.math.Rational
-
 trait AI extends {
   def setup(self: Monster): Interact[Monster]
   def apply(self: Monster, targets: Team): Interact[BattleAttack]
-}
-object AI {
-  def choose[A](num: Long, denom: Long, ifHit: ⇒ A, ifMiss: ⇒ A): Rng[A] =
-    chance(num, denom).map(c ⇒ if (c) ifHit else ifMiss)
-
-  def choose[A](r: Rational, ifHit: ⇒ A, ifMiss: ⇒ A): Rng[A] =
-    chance(r).map(c ⇒ if (c) ifHit else ifMiss)
-
-  def chance(num: Long, denom: Long): Rng[Boolean] =
-    chance(Rational(num, denom))
-
-  def chance(r: Rational): Rng[Boolean] =
-    Rng.chooselong(1L, r.denominatorAsLong)
-      .map(i ⇒ i <= r.numeratorAsLong)
 }

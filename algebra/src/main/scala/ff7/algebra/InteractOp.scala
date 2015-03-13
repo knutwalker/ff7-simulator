@@ -17,14 +17,12 @@
 package ff7
 package algebra
 
-import com.nicta.rng.Rng
-
 
 sealed trait InteractOp[A]
 object InteractOp {
   case class  ShowMessage(s: String)                                 extends InteractOp[Unit]
   case class  ShowItems(ps: List[UiItem], id: TeamId)                extends InteractOp[Unit]
   case class  Log(x: String, level: LogLevel, ex: Option[Throwable]) extends InteractOp[Unit]
-  case class  Random[A](rng: Rng[A])                                 extends InteractOp[A]
+  case class  ChooseInt(lowerInclusive: Int, upperInclusive: Int)    extends InteractOp[Int]
   case object ReadInput                                              extends InteractOp[Input]
 }

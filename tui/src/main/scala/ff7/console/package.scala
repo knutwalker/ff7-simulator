@@ -22,6 +22,7 @@ import algebra.InteractOp._
 import scalaz._, Scalaz._
 import effect.IO
 
+import com.nicta.rng.Rng
 import jline.console.ConsoleReader
 import jline.internal.NonBlockingInputStream
 
@@ -31,7 +32,7 @@ package object tui {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case ShowItems(ps, _) ⇒ printPersons(ps)
       case ShowMessage(s)   ⇒ IO.putStrLn(s"  ~~ ${Console.GREEN}$s${Console.RESET}")
-      case Random(rng)      ⇒ rng.run
+      case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
       case ReadInput        ⇒ readInput
       case Log(_, _, _)     ⇒ IO(())
     }

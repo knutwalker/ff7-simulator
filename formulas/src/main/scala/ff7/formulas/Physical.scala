@@ -17,26 +17,26 @@
 package ff7
 package formulas
 
+import algebra.Interact
 import battle.{Attacker, Hit, Target}
 
-import com.nicta.rng.Rng
 import spire.math.Rational
 
 import math._
 
 object Physical extends Formula {
 
-  def apply(attacker: Attacker, target: Target): Rng[Hit] =
+  def apply(attacker: Attacker, target: Target): Interact[Hit] =
     calculateIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else Rng.insert(Hit.missed)
+      else Interact.unit(Hit.missed)
     }
 
-  private def calculateIfHits(attacker: Attacker, target: Target): Rng[Boolean] =
+  private def calculateIfHits(attacker: Attacker, target: Target) =
     calculateIfHitsPercent(attacker, target)
       .flatMap(h ⇒ percent.map(_ < h))
 
-  private def calculateIfHitsPercent(attacker: Attacker, target: Target): Rng[Int] = {
+  private def calculateIfHitsPercent(attacker: Attacker, target: Target) = {
     // Lucky Hit:
     //   The Attacker has a [Lck / 4]% chance of landing a Lucky Hit.  If this is
     //   successful, then Hit% is immediately increased to 255%.
@@ -56,10 +56,10 @@ object Physical extends Formula {
     //   to 0%.
 
     val hitPercent = ((attacker.dexterity / 4).x + attacker.attackPercent.x) + attacker.defensePercent.x - target.defensePercent.x
-    Rng.insert(hitPercent)
+    Interact.unit(hitPercent)
   }
 
-  private def calculateDamage(attacker: Attacker, target: Target): Rng[Hit] = {
+  private def calculateDamage(attacker: Attacker, target: Target) = {
     val damage = calculateBaseDamage(attacker, target)
     val criticalHits = calculateCritical(attacker, target)
 
@@ -83,25 +83,25 @@ object Physical extends Formula {
     ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
   }
 
-  private def calculateCritical(attacker: Attacker, target: Target): Rng[Boolean] = {
+  private def calculateCritical(attacker: Attacker, target: Target) = {
     val criticalPercent = Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
     percent.map(_ <= criticalPercent)
   }
 
-  private def applyCritical(critical: Boolean, damage: Int): Rng[Int] =
-    Rng.insert(if (critical) damage * 2 else damage)
+  private def applyCritical(critical: Boolean, damage: Int) =
+    Interact.unit(if (critical) damage * 2 else damage)
 
-  private def applyVariance(d: Int): Rng[Int] =
+  private def applyVariance(d: Int) =
     damageVariation.map(m ⇒ Rational(d * m, 4096).toInt)
 
-  private def applyBounds(damage: Int): Rng[Int] =
-    Rng.insert(min(9999, max(1, damage)))
+  private def applyBounds(damage: Int) =
+    Interact.unit(min(9999, max(1, damage)))
 
-  private val percent = Rng
-    .chooseint(0, 65535)
+  private val percent = Interact
+    .chooseInt(0, 65535)
     .map(i ⇒ Rational(i * 99, 65535).toInt + 1)
 
-  private val damageVariation: Rng[Int] = Rng
-    .chooseint(0, 255)
+  private val damageVariation = Interact
+    .chooseInt(0, 255)
     .map(_ + 3841)
 }

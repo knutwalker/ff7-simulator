@@ -16,10 +16,9 @@
 
 package ff7
 
+import algebra.Interact
 import battle.{Attacker, Hit, Target}
 
-import com.nicta.rng.Rng
-
 package object formulas {
-  type Formula = ((Attacker, Target) ⇒ Rng[Hit])
+  type Formula = ((Attacker, Target) ⇒ Interact[Hit])
 }

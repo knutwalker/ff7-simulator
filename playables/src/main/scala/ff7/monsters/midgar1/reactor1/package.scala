@@ -25,7 +25,6 @@ import stats.{Power, AttackPercent, MP}
 import scalaz._
 import Scalaz._
 
-import com.nicta.rng.Rng
 import shapeless.contrib.scalaz._
 import spire.math.Rational
 
@@ -37,23 +36,24 @@ package reactor1 {
       AttackPercent(85), Power(Rational(3, 2)))
     def attack =
       if (true) // if (heroes.rowPosition(self) == FrontRow)
-        AI.choose(1, 2, tonfa, machineGun)
+        Interact.choose(1, 2, tonfa, machineGun)
       else
-        AI.choose(1, 6, tonfa, machineGun)
+        Interact.choose(1, 6, tonfa, machineGun)
   }
 
   object GuardHound extends SimpleAi {
     val bite = MonsterAttack.physical("Bite")
     val tentacle = MonsterAttack.physical("Tentacle",
       AttackPercent(90), Power(Rational(3, 2)))
-    def attack = AI.choose(1, 3, tentacle, bite)
+    def attack = Interact.choose(1, 3, tentacle, bite)
     override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
   }
 
 
   object MonoDrive extends AI {
     val drillDrive = MonsterAttack.physical("Drilldrive")
-    val fire = MonsterAttack.physical("Fire", // Magical
+    val fire = MonsterAttack.physical(
+      "Fire", // Magical
       power = Power(Rational(1, 2)), cost = some(MP(4)))
     def setup(self: Monster): Interact[Monster] = Predef.???
     def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
@@ -66,9 +66,9 @@ package reactor1 {
     val beamGun = MonsterAttack.physical("Beam Gun",
       power = Power(Rational(9, 8)))
     def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
-      AI.choose(1, 2, beamGun, handClaw)
+      Interact.choose(1, 2, beamGun, handClaw)
     } else {
-      AI.choose(1, 12, handClaw, beamGun)
+      Interact.choose(1, 12, handClaw, beamGun)
     }
   }
 
@@ -112,11 +112,11 @@ package reactor1 {
     }
 
     override def setup(self: Monster) =
-      Interact.random(Rng.chooseint(0, 3).map {
+      Interact.chooseInt(0, 3).map {
         case 0 ⇒ self.copy(ai = state1)
         case 1 ⇒ self.copy(ai = state2)
         case _ ⇒ self.copy(ai = state3)
-      })
+      }
 
     def apply(self: Monster, targets: Team): Interact[BattleAttack] =
       throw new IllegalStateException("setup routine did not run")

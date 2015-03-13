@@ -80,7 +80,7 @@ object Simulation {
   def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
     attacker.chosenAttack.formulaType match {
       case FormulaType.Physical ⇒
-        random(formulas.Physical(attacker, target))
+        formulas.Physical(attacker, target)
           .map(BattleResult(originalAttacker, attacker, target, _))
     }
   }
