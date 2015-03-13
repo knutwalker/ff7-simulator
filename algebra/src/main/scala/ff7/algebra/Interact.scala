@@ -19,9 +19,8 @@ package algebra
 
 import InteractOp._
 
-import scalaz._, Scalaz._, Leibniz._, effect._
+import scalaz._, Leibniz._
 
-import com.nicta.rng.Rng
 import spire.math.Rational
 
 sealed trait Interact[A] {
@@ -68,12 +67,6 @@ sealed trait Interact[A] {
 
   def run[M[_]](implicit f: InteractOp ~> M, M: Monad[M]): M[A] =
     Free.runFC(free)(f)(M)
-
-  def runIO: IO[A] =
-    run[IO](Interact.defaultInterpreter, Monad[IO])
-
-  def unsafeRun(): A =
-    runIO.unsafePerformIO()
 }
 
 object Interact {
@@ -157,15 +150,4 @@ object Interact {
       def zero =
         point(M.zero)
     }
-
-  private val defaultInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
-    def apply[X](fa: InteractOp[X]): IO[X] = fa match {
-      case ShowItems(ps, _) ⇒ ps.traverse_(p ⇒ IO.putStrLn(p.text))
-      case ShowMessage(s)   ⇒ IO.putStrLn(s)
-      case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
-      case ReadInput        ⇒ IO(Input.Ok)
-      case Log(_, _, _)     ⇒ IO(())
-      case Fail(reason)     ⇒ IO.throwIO(new RuntimeException(reason))
-    }
-  }
 }

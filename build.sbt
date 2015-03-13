@@ -8,12 +8,10 @@ import sbtrelease.ReleaseStateTransformations._
 import xerial.sbt.Sonatype.SonatypeKeys._
 
 lazy val versions = new {
-  val   argonaut = "6.1-M5"
   val     config = "1.2.1"
   val      jline = "2.12.1"
   val      log4j = "2.2"
   val    logging = "3.1.0"
-  val    monocle = "1.0.1"
   val        rng = "1.3.0"
   val    rxscala = "0.24.0"
   val    rxswing = "0.22.0"
@@ -24,7 +22,6 @@ lazy val versions = new {
   val     specs2 = "3.0"
   val      spire = "0.9.1"
   val      swing = "1.0.1"
-  val transducer = "0.2.0"
   val  zForSpecs = "0.3.0"
 }
 
@@ -32,25 +29,31 @@ lazy val deps = new {
   import versions._
 
   val api = List(
-    "org.typelevel"               %% "shapeless-scalaz"           % shapeless  ,
-    "de.knutwalker"               %% "transducers-scala"          % transducer )
+    "org.typelevel"               %% "shapeless-scalaz"           % shapeless
+      exclude("org.scalaz", "scalaz-core_2.11")                                )
 
   val algebra = List(
     "org.spire-math"              %% "spire"                      % spire      ,
-    "org.scalaz"                  %% "scalaz-core"                % scalaz     ,
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "com.nicta"                   %% "rng"                        % rng        )
+    "org.scalaz"                  %% "scalaz-core"                % scalaz     )
 
   val playables = List(
     "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
   val gui = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "com.nicta"                   %% "rng"                        % rng
+      exclude("org.scalaz", "scalaz-effect_2.11")
+      exclude("org.scalaz", "scalaz-core_2.11")                                ,
     "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
     "io.reactivex"                %% "rxscala"                    % rxscala    ,
     "io.reactivex"                 % "rxswing"                    % rxswing    )
 
   val tui = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "com.nicta"                   %% "rng"                        % rng
+      exclude("org.scalaz", "scalaz-effect_2.11")
+      exclude("org.scalaz", "scalaz-core_2.11")                                ,
     "jline"                        % "jline"                      % jline      )
 
   val core = List(
@@ -139,7 +142,6 @@ lazy val parent = project.in(file("."))
 
 // =================================
 
-lazy val javaVersion = SettingKey[String]("Java Version")
 lazy val githubUser = SettingKey[String]("Github username")
 lazy val githubRepo = SettingKey[String]("Github repository")
 lazy val projectMaintainer = SettingKey[String]("Maintainer")
@@ -152,8 +154,7 @@ lazy val buildSettings = List(
    projectMaintainer := "Paul Horn",
           githubUser := "knutwalker",
           githubRepo := "ff7-simulator",
-        scalaVersion := "2.11.6",
-         javaVersion := "1.8",
+        scalaVersion := versions.scala,
          buildFatJar := true
 )
 
@@ -166,8 +167,6 @@ lazy val commonSettings = List(
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
   scalacOptions in Test += "-Yrangepos",
   scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
-  javacOptions ++=
-    "-source" :: javaVersion.value :: "-target" :: javaVersion.value :: Nil,
   scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(
     url(s"https://github.com/$u/$r"),
     s"scm:git:https://github.com/$u/$r.git",
@@ -177,8 +176,8 @@ lazy val commonSettings = List(
     val name = Project.extract(state).currentRef.project
     (if (name == "parent") "" else name + " ") + "> "
   },
-  initialCommands in console := """import scalaz._, Scalaz._, com.nicta.rng._, ff7._, algebra._, battle._, characters._, monsters._""",
-  initialCommands in consoleQuick := """import scalaz._, Scalaz._, com.nicta.rng._""",
+  initialCommands in console := """import scalaz._, Scalaz._, ff7._, algebra._, battle._, characters._, monsters._""",
+  initialCommands in consoleQuick := """import scalaz._, Scalaz._""",
   logBuffered := false,
   resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
           fork in run       := true,
