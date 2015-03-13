@@ -95,6 +95,9 @@ object Interact {
   def chooseInt(lowerInclusive: Int, upperInclusive: Int): Interact[Int] =
     apply(Free.liftFC(ChooseInt(lowerInclusive, upperInclusive)))
 
+  def fail[A](reason: String): Interact[A] =
+    apply(Free.liftFC(Fail[A](reason)))
+
   def point[A](a: ⇒ A): Interact[A] =
     apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
 
@@ -162,6 +165,7 @@ object Interact {
       case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
       case ReadInput        ⇒ IO(Input.Ok)
       case Log(_, _, _)     ⇒ IO(())
+      case Fail(reason)     ⇒ IO.throwIO(new RuntimeException(reason))
     }
   }
 }

@@ -35,6 +35,7 @@ package object tui {
       case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
       case ReadInput        ⇒ readInput
       case Log(_, _, _)     ⇒ IO(())
+      case Fail(reason)     ⇒ IO.throwIO(new RuntimeException(reason))
     }
   }
 

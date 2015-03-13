@@ -24,5 +24,6 @@ object InteractOp {
   case class  ShowItems(ps: List[UiItem], id: TeamId)                extends InteractOp[Unit]
   case class  Log(x: String, level: LogLevel, ex: Option[Throwable]) extends InteractOp[Unit]
   case class  ChooseInt(lowerInclusive: Int, upperInclusive: Int)    extends InteractOp[Int]
+  case class  Fail[A](reason: String)                                extends InteractOp[A]
   case object ReadInput                                              extends InteractOp[Input]
 }

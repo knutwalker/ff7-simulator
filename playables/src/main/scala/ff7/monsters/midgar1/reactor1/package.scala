@@ -55,9 +55,9 @@ package reactor1 {
     val fire = MonsterAttack.physical(
       "Fire", // Magical
       power = Power(Rational(1, 2)), cost = some(MP(4)))
-    def setup(self: Monster): Interact[Monster] = Predef.???
+    def setup(self: Monster): Interact[Monster] = Interact.point(self)
     def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
-      Predef.???
+      Interact.fail("not yet implemented")
     }
   }
 
@@ -119,6 +119,6 @@ package reactor1 {
       }
 
     def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-      throw new IllegalStateException("setup routine did not run")
+      Interact.fail("setup routine did not run")
   }
 }
