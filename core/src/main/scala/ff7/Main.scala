@@ -43,9 +43,9 @@ object Main extends SafeApp {
 
   def program(field: BattleField) = for {
     _      ← debug("Starting simulation")
-    _      ← printString(s"Starting a new round with $field")
+    _      ← showMessage(s"Starting a new round with $field")
     result ← Simulation(field)
-    _      ← printString(s"Finished round after ${result.history.size} turns")
+    _      ← showMessage(s"Finished round after ${result.history.size} turns")
     _      ← debug("Simulation finished")
   } yield result
 
@@ -122,7 +122,7 @@ object Main extends SafeApp {
       case Log(x, Warn, None)          ⇒ IO(log.warn(x))
       case Log(x, Error, Some(ex))     ⇒ IO(log.error(x, ex))
       case Log(x, Error, None)         ⇒ IO(log.error(x))
-      case PrintString(s) if logPrints ⇒ IO(log.info(s)) >> delegate(fa)
+      case ShowMessage(s) if logPrints ⇒ IO(log.info(s)) >> delegate(fa)
       case _                           ⇒ delegate(fa)
     }
   }

@@ -87,8 +87,8 @@ object Character {
     val aliveAllies = allies.alivesInOrder
     val currentAttacker = aliveAllies.indexOf(a.asPerson)
     for {
-      _      ← printPersons(formatPersons(aliveAllies, currentAttacker), TeamId.Allies)
-      _      ← printString(s"$a: Choose your enemy")
+      _      ← showItems(formatPersons(aliveAllies, currentAttacker), TeamId.Allies)
+      _      ← showMessage(s"$a: Choose your enemy")
       result ← readEnemy(persons)
     } yield result.map(_.cata(p ⇒ BattleAttack(a, p.asTarget), BattleAttack.none))
   }
@@ -107,7 +107,7 @@ object Character {
   }
 
   private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
-    _ ← printPersons(formatPersons(persons, current), TeamId.Opponents)
+    _ ← showItems(formatPersons(persons, current), TeamId.Opponents)
     i ← readInput
   } yield i
 

@@ -17,8 +17,6 @@
 package ff7
 package battle
 
-import stats._
-
 sealed trait BattleAttack
 object BattleAttack {
   val abort: BattleAttack = Abort

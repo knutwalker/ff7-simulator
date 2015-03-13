@@ -78,11 +78,11 @@ object Interact {
   private[algebra] def apply[A](f: Free.FreeC[InteractOp, A]): Interact[A] =
     new Interact[A] { val free = f }
 
-  def printPersons(ps: List[UiItem], id: TeamId): Interact[Unit] =
-    apply(Free.liftFC(PrintPersons(ps, id)))
+  def showItems(ps: List[UiItem], id: TeamId): Interact[Unit] =
+    apply(Free.liftFC(ShowItems(ps, id)))
 
-  def printString(s: String): Interact[Unit] =
-    apply(Free.liftFC(PrintString(s)))
+  def showMessage(s: String): Interact[Unit] =
+    apply(Free.liftFC(ShowMessage(s)))
 
   def random[A](rng: Rng[A]): Interact[A] =
     apply(Free.liftFC(Random(rng)))
@@ -149,11 +149,11 @@ object Interact {
 
   private val defaultInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[X](fa: InteractOp[X]): IO[X] = fa match {
-      case PrintPersons(ps, _) ⇒ ps.traverse_(p ⇒ IO.putStrLn(p.text))
-      case PrintString(s)      ⇒ IO.putStrLn(s)
-      case Random(rng)         ⇒ rng.run
-      case ReadInput           ⇒ IO(Input.Ok)
-      case Log(_, _, _)        ⇒ IO(())
+      case ShowItems(ps, _) ⇒ ps.traverse_(p ⇒ IO.putStrLn(p.text))
+      case ShowMessage(s)   ⇒ IO.putStrLn(s)
+      case Random(rng)      ⇒ rng.run
+      case ReadInput        ⇒ IO(Input.Ok)
+      case Log(_, _, _)     ⇒ IO(())
     }
   }
 }

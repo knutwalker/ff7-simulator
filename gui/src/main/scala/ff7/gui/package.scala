@@ -37,11 +37,11 @@ package object gui {
 
   implicit val GuiInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-      case PrintPersons(ps, id) ⇒ printsPersons(ps, id)
-      case PrintString(s)       ⇒ printsString(s)
-      case Random(rng)          ⇒ rng.run
-      case ReadInput            ⇒ readsInput
-      case Log(_, _, _)         ⇒ IO(())
+      case ShowItems(ps, id) ⇒ printsPersons(ps, id)
+      case ShowMessage(s)    ⇒ printsString(s)
+      case Random(rng)       ⇒ rng.run
+      case ReadInput         ⇒ readsInput
+      case Log(_, _, _)      ⇒ IO(())
     }
   }
 

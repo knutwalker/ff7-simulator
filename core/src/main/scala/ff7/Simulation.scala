@@ -109,31 +109,31 @@ object Simulation {
       case Hit.Critical(x) ⇒
         s"$oa attacked $target using [${a.chosenAttack.name}] and hit critically with $x damage"
     }
-    Interact.printString(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateNoAttack(bf: BattleField): Interact[BattleField] = {
     val b = bf.round(BattleResult.none).swap.cycle
     val msg = "No attack happened"
-    Interact.printString(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateAbort(bf: BattleField): Interact[BattleField] = {
     val b = bf.round(BattleResult.aborted).copy(aborted = true)
     val msg = "Attack was aborted"
-    Interact.printString(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateUndo(bf: BattleField): Interact[BattleField] = bf match {
     case BattleField(_, _, _, _ :: prev :: _, _, _) ⇒
       val msg = "The last two attacks were undone"
-      Interact.printString(msg) >| prev
+      Interact.showMessage(msg) >| prev
     case BattleField(_, _, _, prev :: _, _, _) ⇒
       val msg = "The last attack was undone"
-      Interact.printString(msg) >| prev
+      Interact.showMessage(msg) >| prev
     case _ ⇒
       val msg = "An attack should have been undone, but there was no history yet"
-      Interact.printString(msg) >| bf
+      Interact.showMessage(msg) >| bf
   }
 
   private val battleMonad = MonadState[IOState, BattleField]
