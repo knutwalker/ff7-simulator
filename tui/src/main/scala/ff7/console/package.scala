@@ -16,10 +16,12 @@
 
 package ff7
 
+import algebra._
+import algebra.InteractOp._
+
 import scalaz._, Scalaz._
 import effect.IO
 
-import algebra._
 import jline.console.ConsoleReader
 import jline.internal.NonBlockingInputStream
 

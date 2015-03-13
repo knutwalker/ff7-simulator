@@ -17,6 +17,8 @@
 package ff7
 package algebra
 
+import InteractOp._
+
 import scalaz._, Scalaz._, Leibniz._, effect._
 
 import com.nicta.rng.Rng

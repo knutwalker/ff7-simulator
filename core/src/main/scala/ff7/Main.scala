@@ -16,7 +16,7 @@
 
 package ff7
 
-import algebra._, LogLevel._, Interact._
+import algebra._, LogLevel._, Interact._, InteractOp._
 import battle.{BattleField, Team}
 
 import scalaz._
