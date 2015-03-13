@@ -56,7 +56,7 @@ final case class Monster(
 
   def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
     opponents.alives.toNel
-      .fold(unit(BattleAttack.none))(ops ⇒ ai(this, ops.toTeam))
+      .fold(point(BattleAttack.none))(ops ⇒ ai(this, ops.toTeam))
       .map(_.right)
   }
 

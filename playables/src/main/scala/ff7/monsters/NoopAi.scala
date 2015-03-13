@@ -22,7 +22,7 @@ import battle.{BattleAttack, Team}
 
 object NoopAi extends AI {
   def setup(self: Monster): Interact[Monster] =
-    Interact.unit(self)
+    Interact.point(self)
   def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-    Interact.unit(BattleAttack.none)
+    Interact.point(BattleAttack.none)
 }

@@ -95,14 +95,14 @@ object Interact {
   def chooseInt(lowerInclusive: Int, upperInclusive: Int): Interact[Int] =
     apply(Free.liftFC(ChooseInt(lowerInclusive, upperInclusive)))
 
+  def point[A](a: ⇒ A): Interact[A] =
+    apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
+
   def oneOf[A](xs: A*): Interact[A] =
     chooseInt(0, xs.size - 1) map xs
 
   def oneOfL[A](x: NonEmptyList[A]): Interact[A] =
     chooseInt(0, x.size - 1) map x.list
-
-  def unit[A](a: ⇒ A): Interact[A] =
-    apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
 
   def choose[A](num: Int, denom: Int, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
     choose(Rational(num.toLong, denom.toLong), whenHit, whenMiss)
@@ -137,7 +137,7 @@ object Interact {
       def bind[A, B](a: Interact[A])(f: A ⇒ Interact[B]) =
         a flatMap f
       def point[A](a: ⇒ A) =
-        unit(a)
+        Interact.point(a)
     }
 
   implicit def InteractSemigroup[A](implicit S: Semigroup[A]): Semigroup[Interact[A]] =
@@ -152,7 +152,7 @@ object Interact {
         i1 |+| i2
 
       def zero =
-        unit(M.zero)
+        point(M.zero)
     }
 
   private val defaultInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {

@@ -29,7 +29,7 @@ object Physical extends Formula {
   def apply(attacker: Attacker, target: Target): Interact[Hit] =
     calculateIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else Interact.unit(Hit.missed)
+      else Interact.point(Hit.missed)
     }
 
   private def calculateIfHits(attacker: Attacker, target: Target) =
@@ -56,7 +56,7 @@ object Physical extends Formula {
     //   to 0%.
 
     val hitPercent = ((attacker.dexterity / 4).x + attacker.attackPercent.x) + attacker.defensePercent.x - target.defensePercent.x
-    Interact.unit(hitPercent)
+    Interact.point(hitPercent)
   }
 
   private def calculateDamage(attacker: Attacker, target: Target) = {
@@ -89,13 +89,13 @@ object Physical extends Formula {
   }
 
   private def applyCritical(critical: Boolean, damage: Int) =
-    Interact.unit(if (critical) damage * 2 else damage)
+    Interact.point(if (critical) damage * 2 else damage)
 
   private def applyVariance(d: Int) =
     damageVariation.map(m ⇒ Rational(d * m, 4096).toInt)
 
   private def applyBounds(damage: Int) =
-    Interact.unit(min(9999, max(1, damage)))
+    Interact.point(min(9999, max(1, damage)))
 
   private val percent = Interact
     .chooseInt(0, 65535)

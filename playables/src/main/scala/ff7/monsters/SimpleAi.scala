@@ -33,7 +33,7 @@ trait SimpleAi extends AI {
     tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
   }
 
-  def setup(self: Monster): Interact[Monster] = Interact.unit(self)
+  def setup(self: Monster): Interact[Monster] = Interact.point(self)
 
-  implicit protected def liftInteract[A](a: A): Interact[A] = Interact.unit(a)
+  implicit protected def liftInteract[A](a: A): Interact[A] = Interact.point(a)
 }

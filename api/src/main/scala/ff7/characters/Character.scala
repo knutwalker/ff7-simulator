@@ -81,7 +81,7 @@ final case class Character(
 object Character {
 
   private def noAttack: Interact[Input.Special \/ BattleAttack] =
-    unit(\/.right(BattleAttack.none))
+    point(\/.right(BattleAttack.none))
 
   private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Input.Special \/ BattleAttack] = {
     val aliveAllies = allies.alivesInOrder
@@ -96,10 +96,10 @@ object Character {
   private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Input.Special \/ Maybe[Person]] = {
     val bounded = min(max(0, current), persons.size - 1)
     printEnemies(persons.list, bounded).flatMap {
-      case Input.Quit   ⇒ unit(\/.left(Input.Quit))
-      case Input.Undo   ⇒ unit(\/.left(Input.Undo))
-      case Input.Cancel ⇒ unit(\/.right(empty))
-      case Input.Ok     ⇒ unit(\/.right(persons.list(bounded).just))
+      case Input.Quit   ⇒ point(\/.left(Input.Quit))
+      case Input.Undo   ⇒ point(\/.left(Input.Undo))
+      case Input.Cancel ⇒ point(\/.right(empty))
+      case Input.Ok     ⇒ point(\/.right(persons.list(bounded).just))
       case Input.Up     ⇒ readEnemy(persons, bounded - 1)
       case Input.Down   ⇒ readEnemy(persons, bounded + 1)
       case _            ⇒ readEnemy(persons, bounded)

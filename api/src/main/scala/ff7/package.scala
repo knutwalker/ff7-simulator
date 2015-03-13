@@ -69,7 +69,7 @@ package object ff7 {
   }
 
   implicit class AnyInteractOps[A](val x: A) extends AnyVal {
-    def interact: Interact[A] = Interact.unit(x)
+    def interact: Interact[A] = Interact.point(x)
   }
 
   implicit class StringInteractOps(val x: String) extends AnyVal {

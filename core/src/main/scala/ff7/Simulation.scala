@@ -36,7 +36,7 @@ object Simulation {
   val runAttack: StateT[Interact, BattleField, BattleResult] =
     chooseAttacker.mapK[Interact, BattleResult, BattleField] {
       case (bf, Some(a)) ⇒ attack(a, bf.enemies, bf.heroes).map(b ⇒ (bf, b))
-      case (bf, None)    ⇒ unit(BattleResult.none).map(b ⇒ (bf, b))
+      case (bf, None)    ⇒ point(BattleResult.none).map(b ⇒ (bf, b))
     }
 
   val playRound: StateT[Interact, BattleField, BattleField] = {
@@ -46,7 +46,7 @@ object Simulation {
 
   val setupPerson: Person ⇒ Interact[Person] = {
     case m: Monster ⇒ m.ai.setup(m).map(_.asPerson)
-    case x          ⇒ unit(x)
+    case x          ⇒ point(x)
   }
 
   val initiateRound =
@@ -70,10 +70,10 @@ object Simulation {
   def attack(attacker: Person, opponents: Team, allies: Team): Interact[BattleResult] = {
     attacker.chooseAttack(opponents, allies).flatMap {
       case \/-(BattleAttack.Attack(x, t)) ⇒ executeAttack(attacker, x, t)
-      case \/-(BattleAttack.None)         ⇒ unit(BattleResult.none)
-      case \/-(BattleAttack.Abort)        ⇒ unit(BattleResult.aborted)
-      case -\/(Input.Quit)                ⇒ unit(BattleResult.aborted)
-      case -\/(Input.Undo)                ⇒ unit(BattleResult.undo)
+      case \/-(BattleAttack.None)         ⇒ point(BattleResult.none)
+      case \/-(BattleAttack.Abort)        ⇒ point(BattleResult.aborted)
+      case -\/(Input.Quit)                ⇒ point(BattleResult.aborted)
+      case -\/(Input.Undo)                ⇒ point(BattleResult.undo)
     }
   }
 
