@@ -24,7 +24,9 @@ import scalaz._, Leibniz._
 import spire.math.Rational
 
 sealed trait Interact[A] {
-  val free: Free.FreeC[InteractOp, A]
+  import Interact.InteractFree
+
+  val free: InteractFree[A]
 
   def map[B](f: A ⇒ B): Interact[B] =
     Interact(free map f)
@@ -70,7 +72,12 @@ sealed trait Interact[A] {
 }
 
 object Interact {
-  private[algebra] def apply[A](f: Free.FreeC[InteractOp, A]): Interact[A] =
+
+  type InteractC[A] = Coyoneda[InteractOp, A]
+
+  type InteractFree[A] = Free[InteractC, A]
+
+  private[algebra] def apply[A](f:InteractFree[A]): Interact[A] =
     new Interact[A] { val free = f }
 
   def showItems(ps: List[UiItem], id: TeamId): Interact[Unit] =
@@ -92,7 +99,7 @@ object Interact {
     apply(Free.liftFC(Fail[A](reason)))
 
   def point[A](a: ⇒ A): Interact[A] =
-    apply(Free.point[({type l[a] = Coyoneda[InteractOp, a]})#l, A](a))
+    apply(Free.point[InteractC, A](a))
 
   def oneOf[A](xs: A*): Interact[A] =
     chooseInt(0, xs.size - 1) map xs
