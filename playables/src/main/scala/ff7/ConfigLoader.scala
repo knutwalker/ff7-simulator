@@ -29,7 +29,7 @@ abstract class ConfigLoader[A](configPath: String, entityName: String)(implicit 
 
   private lazy val loaded = {
     val c = ConfigLoader.config.getObject(configPath)
-    c.asScala.map(_.map(A.cast)).toMap
+    c.asScala.map(_.map(A.read)).toMap
   }
 
   final def selectDynamic(name: String): Val[A] = loaded.getOrElse(

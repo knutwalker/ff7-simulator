@@ -31,7 +31,7 @@ import collection.JavaConverters._
 import Predef.{augmentString, genericWrapArray}
 
 trait ConfigReader[A] {
-  def cast(v: ConfigValue): Val[A]
+  def read(v: ConfigValue): Val[A]
 }
 object ConfigReader {
   def apply[A](implicit A: ConfigReader[A]): ConfigReader[A] = A
@@ -39,9 +39,9 @@ object ConfigReader {
   import ConfigReaderImplicits._
 
   implicit def list[A](implicit A: ConfigReader[A]): ConfigReader[List[A]] = new ConfigReader[List[A]] {
-    def cast(ov: ConfigValue): Val[List[A]] = ov match {
+    def read(ov: ConfigValue): Val[List[A]] = ov match {
       case v: ConfigList ⇒
-        v.asScala.toList.traverse[Val, A](A.cast)
+        v.asScala.toList.traverse[Val, A](A.read)
     case x ⇒
         s"[$x] is not a list".failureNel
     }
@@ -49,30 +49,30 @@ object ConfigReader {
 
   implicit def nonemptylist[A](implicit A: ConfigReader[A]): ConfigReader[NonEmptyList[A]] = new ConfigReader[NonEmptyList[A]] {
     import Validation.FlatMap._
-    def cast(ov: ConfigValue): Val[NonEmptyList[A]] =
-      list[A].cast(ov).flatMap(_.toNel.toSuccess(s"The list was empty".wrapNel))
+    def read(ov: ConfigValue): Val[NonEmptyList[A]] =
+      list[A].read(ov).flatMap(_.toNel.toSuccess(s"The list was empty".wrapNel))
   }
 
   implicit val string: ConfigReader[String] = new ConfigReader[String] {
-    def cast(v: ConfigValue): Val[String] =
+    def read(v: ConfigValue): Val[String] =
       get(v).successNel
   }
 
   implicit val int: ConfigReader[Int] = new ConfigReader[Int] {
-    def cast(v: ConfigValue): Val[Int] =
+    def read(v: ConfigValue): Val[Int] =
       TryVN(v.unwrapped().asInstanceOf[Int])
         .orElse(TryVN(get(v).toInt))
   }
 
   implicit val long: ConfigReader[Long] = new ConfigReader[Long] {
-    def cast(v: ConfigValue): Val[Long] =
+    def read(v: ConfigValue): Val[Long] =
       TryVN(v.unwrapped().asInstanceOf[Long])
         .orElse(TryVN(get(v).toLong))
   }
 
   implicit val rational: ConfigReader[Rational] = new ConfigReader[Rational] {
-    def cast(v: ConfigValue): Val[Rational] = {
-      int.cast(v).map(Rational(_))
+    def read(v: ConfigValue): Val[Rational] = {
+      int.read(v).map(Rational(_))
         .orElse(parseString(get(v)))
     }
     private def parseString(x: String): Val[Rational] = {
@@ -88,7 +88,7 @@ object ConfigReader {
   }
 
   implicit val weapon: ConfigReader[Weapon] = new ConfigReader[Weapon] {
-    def cast(ov: ConfigValue): Val[Weapon] = ov match {
+    def read(ov: ConfigValue): Val[Weapon] = ov match {
       case v: ConfigObject ⇒
         val name = v.nel[String]("name")
         val power = v.nel[Rational]("power")
@@ -111,7 +111,7 @@ object ConfigReader {
   }
 
   implicit val character: ConfigReader[Character] = new ConfigReader[Character] {
-    def cast(ov: ConfigValue): Val[Character] = ov match {
+    def read(ov: ConfigValue): Val[Character] = ov match {
       case v: ConfigObject ⇒
         val name = v.nel[String]("name")
         val level = v.nel[Int]("level")
@@ -157,7 +157,7 @@ object ConfigReader {
   }
 
   implicit val monster: ConfigReader[Monster] = new ConfigReader[Monster] {
-    def cast(ov: ConfigValue): Val[Monster] = ov match {
+    def read(ov: ConfigValue): Val[Monster] = ov match {
       case v: ConfigObject ⇒
         val name = v.nel[String]("name")
         val level = v.nel[Int]("level")
@@ -201,13 +201,13 @@ object ConfigReader {
   }
 
   implicit val ai: ConfigReader[AI] = new ConfigReader[AI] {
-    def cast(v: ConfigValue): Val[AI] = {
+    def read(v: ConfigValue): Val[AI] = {
       AiLoader(get(v)).nel
     }
   }
 
   implicit val encounter: ConfigReader[Encounter] = new ConfigReader[Encounter] {
-    def cast(ov: ConfigValue): Val[Encounter] = ov match {
+    def read(ov: ConfigValue): Val[Encounter] = ov match {
       case v: ConfigObject ⇒
         val id = v.nel[String]("id")
         val encounterValue = v.nel[Int]("encounterValue")
@@ -221,7 +221,7 @@ object ConfigReader {
   }
 
   implicit val encounterGroup: ConfigReader[Encounter.Group] = new ConfigReader[Encounter.Group] {
-    def cast(ov: ConfigValue): Val[Encounter.Group] = ov match {
+    def read(ov: ConfigValue): Val[Encounter.Group] = ov match {
       case v: ConfigObject ⇒
         val id = v.nel[String]("id")
         val kind = v.nel[Encounter.Kind]("type")
@@ -246,7 +246,7 @@ object ConfigReader {
   }
 
   implicit val monsterRef: ConfigReader[Monster @@ Ref] = new ConfigReader[Monster @@ Ref] {
-    def cast(ov: ConfigValue): Val[Monster @@ Ref] = {
+    def read(ov: ConfigValue): Val[Monster @@ Ref] = {
       val name = get(ov)
       val parts = name.split(" ", 2).toList
       Monsters.selectDynamic(parts.head)
@@ -256,7 +256,7 @@ object ConfigReader {
   }
 
   implicit val encounterKind: ConfigReader[Encounter.Kind] = new ConfigReader[Encounter.Kind] {
-    def cast(v: ConfigValue): Val[Encounter.Kind] = get(v).toLowerCase match {
+    def read(v: ConfigValue): Val[Encounter.Kind] = get(v).toLowerCase match {
       case "normal" ⇒ Encounter.Normal.successNel
       case "back"   ⇒ Encounter.Back.successNel
       case _        ⇒ "encounter kind must be normal | back".failureNel
@@ -270,10 +270,10 @@ object ConfigReader {
 object ConfigReaderImplicits {
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
     def nel[A](key: String)(implicit A: ConfigReader[A]): Val[A] =
-      if (v.containsKey(key)) A.cast(v.get(key))
+      if (v.containsKey(key)) A.read(v.get(key))
       else s"$v does not contain $key".failureNel
     def nel_?[A](key: String)(implicit A: ConfigReader[A]): Val[Option[A]] =
-      if (v.containsKey(key)) A.cast(v.get(key)).map(some)
+      if (v.containsKey(key)) A.read(v.get(key)).map(some)
       else none[A].successNel
   }
 }
