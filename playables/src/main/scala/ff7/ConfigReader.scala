@@ -17,7 +17,7 @@
 package ff7
 
 import battle.{Team, Encounter}
-import characters.{Weapon, Character}
+import characters.{Armour, Weapon, Character}
 import monsters.{AI, AiLoader, Monster}
 import stats._
 
@@ -87,6 +87,29 @@ object ConfigReader {
     }
   }
 
+  implicit val armour: ConfigReader[Armour] = new ConfigReader[Armour] {
+    def read(ov: ConfigValue): Val[Armour] = ov match {
+      case v: ConfigObject ⇒
+        val name = v.nel[String]("name")
+        val defense = v.nel[Int]("defense")
+        val defensePercent = v.nel[Int]("defensepercent")
+        val magicDefense = v.nel[Int]("magicdefense")
+        val magicDefensePercent = v.nel[Int]("magicdefensepercent")
+        (name |@| defense |@| defensePercent |@| magicDefense |@| magicDefensePercent) {
+          (n, d, dp, md, mdp) ⇒
+            Armour(
+              n,
+              Defense(d),
+              DefensePercent(dp),
+              MagicDefense(md),
+              MagicDefensePercent(mdp)
+            )
+        }
+      case x ⇒
+        s"[$x] is not an object".failureNel
+    }
+  }
+
   implicit val weapon: ConfigReader[Weapon] = new ConfigReader[Weapon] {
     def read(ov: ConfigValue): Val[Weapon] = ov match {
       case v: ConfigObject ⇒
@@ -125,14 +148,18 @@ object ConfigReader {
         val luck = v.nel[Int]("luck")
         val xp = v.nel[Int]("xp")
         val weaponName = v.nel_?[String]("weapon")
+        val armourName = v.nel_?[String]("armour")
         val weapon = {
           import Validation.FlatMap._
           weaponName.flatMap(ow ⇒ ow.traverse[Val, Weapon](w ⇒ Weapons.selectDynamic(w)))
         }
+        val armour = {
+          import Validation.FlatMap._
+          armourName.flatMap(ow ⇒ ow.traverse[Val, Armour](w ⇒ Armours.selectDynamic(w)))
+        }
 
-
-        (name |@| level |@| hp |@| mp |@| strength |@| dexterity |@| vitality |@| magic |@| spirit |@| luck |@| xp |@| weapon) {
-        (n, l, hp, mp, s, d, v, m, i, c, xp, w) ⇒
+        val make = (name |@| level |@| hp |@| mp |@| strength |@| dexterity |@| vitality |@| magic |@| spirit |@| luck |@| xp) {
+        (n, l, hp, mp, s, d, v, m, i, c, xp) ⇒ (w: Option[Weapon], a: Option[Armour]) ⇒
           Character(
             n,
             Level(l),
@@ -148,9 +175,11 @@ object ConfigReader {
             Luck(c),
             XP(xp),
             fromOption(w),
-            empty
+            fromOption(a)
           )
         }
+
+        (make |@| weapon |@| armour) { (m, w, a) ⇒ m(w, a) }
       case x ⇒
         s"[$x] is not an object".failureNel
     }
