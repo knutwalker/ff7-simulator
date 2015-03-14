@@ -17,6 +17,7 @@
 package ff7
 package characters
 
+import algebra.Input.Special
 import algebra.{TeamId, UiItem, Input, Interact}
 import algebra.Interact._
 import battle._
@@ -59,9 +60,9 @@ final case class Character(
   val chosenAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)
 
-  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
+  def chooseAttack(opponents: Team, allies: Team): Interact[Special \/ BattleAttack] = {
     list.toNel(opponents.alivesInOrder)
-      .fold(Character.noAttack)(Character.selectPerson(this, allies))
+      .fold(Character.noAttack)(Character.selectAttack(this, allies))
   }
 
   def hit(h: Hit): Person = h match {
@@ -80,38 +81,69 @@ final case class Character(
 }
 object Character {
 
-  private def noAttack: Interact[Input.Special \/ BattleAttack] =
+  private def noAttack: Interact[Special \/ BattleAttack] =
     point(\/.right(BattleAttack.none))
 
-  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Input.Special \/ BattleAttack] = {
+  private def selectAttack(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
     val aliveAllies = allies.alivesInOrder
     val currentAttacker = aliveAllies.indexOf(a.asPerson)
     for {
-      _      ← showItems(formatPersons(aliveAllies, currentAttacker), TeamId.Allies)
+      _      ← showItems(formatItems(aliveAllies, currentAttacker), TeamId.Allies)
+      _      ← showMessage(s"$a: Choose your attack")
+      action ← readList(CharacterAction.actions, 0)
+      act    = action.map(_ | CharacterAction.skip)
+      result ← evaluateMaybeDecision(act, a, allies, persons)
+    } yield result
+  }
+
+  private def evaluateMaybeDecision(d: Special \/ CharacterAction, a: Attacker, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] =
+    d.traverse(evaluateDecision(_, a, as, ps)).map(_.flatMap(x ⇒ x))
+
+  private def evaluateDecision(d: CharacterAction, a: Attacker, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = d match {
+    case CharacterAction.Attack ⇒
+      selectPerson(a, as)(ps)
+//    case CharacterAction.Magic ⇒
+//      BattleAttack.none.right[Special].interact
+//    case CharacterAction.Item ⇒
+//      BattleAttack.none.right[Special].interact
+//    case CharacterAction.Defend ⇒
+//      BattleAttack.none.right[Special].interact
+    case CharacterAction.Skip ⇒
+      BattleAttack.none.right[Special].interact
+  }
+
+  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
+    val aliveAllies = allies.alivesInOrder
+    val currentAttacker = aliveAllies.indexOf(a.asPerson)
+    for {
+      _      ← showItems(formatItems(aliveAllies, currentAttacker), TeamId.Allies)
       _      ← showMessage(s"$a: Choose your enemy")
-      result ← readEnemy(persons)
+      result ← readList(persons, 0)
     } yield result.map(_.cata(p ⇒ BattleAttack(a, p.asTarget), BattleAttack.none))
   }
 
-  private def readEnemy(persons: NonEmptyList[Person], current: Int = 0): Interact[Input.Special \/ Maybe[Person]] = {
-    val bounded = min(max(0, current), persons.size - 1)
-    printEnemies(persons.list, bounded).flatMap {
+  private def readList[A](things: NonEmptyList[A], current: Int = 0): Interact[Special \/ Maybe[A]] = {
+    val lowerBound = 0
+    val upperBound = things.size - 1
+    val bounded = min(max(lowerBound, current), upperBound)
+    def readsInput: Interact[Special \/ Maybe[A]] = readInput.flatMap {
       case Input.Quit   ⇒ point(\/.left(Input.Quit))
       case Input.Undo   ⇒ point(\/.left(Input.Undo))
       case Input.Cancel ⇒ point(\/.right(empty))
-      case Input.Ok     ⇒ point(\/.right(persons.list(bounded).just))
-      case Input.Up     ⇒ readEnemy(persons, bounded - 1)
-      case Input.Down   ⇒ readEnemy(persons, bounded + 1)
-      case _            ⇒ readEnemy(persons, bounded)
+      case Input.Ok     ⇒ point(\/.right(things.list(bounded).just))
+      case Input.Up     if bounded == lowerBound ⇒ readsInput
+      case Input.Down   if bounded == upperBound ⇒ readsInput
+      case Input.Up     ⇒ readList(things, bounded - 1)
+      case Input.Down   ⇒ readList(things, bounded + 1)
+      case _            ⇒ readsInput
     }
+    printOpponents(things.list, bounded) >> readsInput
   }
 
-  private def printEnemies(persons: List[Person], current: Int): Interact[Input] = for {
-    _ ← showItems(formatPersons(persons, current), TeamId.Opponents)
-    i ← readInput
-  } yield i
+  private def printOpponents(things: List[_], current: Int): Interact[Unit] =
+    showItems(formatItems(things, current), TeamId.Opponents)
 
-  private def formatPersons(persons: List[Person], current: Int): List[UiItem] = persons
+  private def formatItems(things: List[_], current: Int): List[UiItem] = things
     .zipWithIndex
     .map(px ⇒ UiItem(px._1.toString, px._2 == current))
 }
