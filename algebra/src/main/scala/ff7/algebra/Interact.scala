@@ -21,8 +21,6 @@ import InteractOp._
 
 import scalaz._, Leibniz._
 
-import spire.math.Rational
-
 sealed trait Interact[A] {
   import Interact.InteractFree
 
@@ -107,18 +105,14 @@ object Interact {
   def oneOfL[A](x: NonEmptyList[A]): Interact[A] =
     chooseInt(0, x.size - 1) map x.list
 
-  def choose[A](num: Int, denom: Int, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
-    choose(Rational(num.toLong, denom.toLong), whenHit, whenMiss)
+  def choose[A](parts: Int, outOf: Int, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
+    chance(parts, outOf).map(c ⇒ if (c) whenHit else whenMiss)
 
-  def choose[A](r: Rational, whenHit: ⇒ A, whenMiss: ⇒ A): Interact[A] =
-    chance(r).map(c ⇒ if (c) whenHit else whenMiss)
+  def percent(p: Int): Interact[Boolean] =
+    chance(p, 100)
 
-  def chance(num: Int, denom: Int): Interact[Boolean] =
-    chance(Rational(num.toLong, denom.toLong))
-
-  def chance(r: Rational): Interact[Boolean] =
-    chooseInt(1, r.denominatorAsLong.toInt)
-      .map(_ <= r.numeratorAsLong)
+  def chance(parts: Int, outOf: Int): Interact[Boolean] =
+    chooseInt(1, outOf).map(_ <= parts)
 
   def debug(s: String): Interact[Unit] =
     log(s, LogLevel.Debug, None)

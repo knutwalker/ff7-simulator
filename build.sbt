@@ -29,11 +29,11 @@ lazy val deps = new {
   import versions._
 
   val api = List(
+    "org.spire-math"              %% "spire"                      % spire      ,
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless
       exclude("org.scalaz", "scalaz-core_2.11")                                )
 
   val algebra = List(
-    "org.spire-math"              %% "spire"                      % spire      ,
     "org.scalaz"                  %% "scalaz-core"                % scalaz     )
 
   val playables = List(
