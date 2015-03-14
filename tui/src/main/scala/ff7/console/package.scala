@@ -41,6 +41,8 @@ package object tui {
 
   private val reader = new ConsoleReader
 
+  def close: IO[Unit] = IO(reader.shutdown())
+
   private def printPersons(persons: List[UiItem]): IO[Unit] =
     persons.map {
       case UiItem(p, true)  ⇒ s"${Console.BOLD}> $p${Console.RESET}"

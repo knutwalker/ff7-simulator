@@ -48,11 +48,11 @@ package object gui {
     }
   }
 
-  def start(): Unit = {
+  def start(): IO[Unit] = IO {
     SwingApp.main(Array())
   }
 
-  def stop(): Unit = {
+  def stop(): IO[Unit] = IO {
     SwingApp.shutdown()
   }
 

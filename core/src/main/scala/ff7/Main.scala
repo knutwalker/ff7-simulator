@@ -108,13 +108,13 @@ object Main extends SafeApp {
   }
   case object Console extends UI {
     def start: IO[Unit] = IO(())
-    def stop: IO[Unit] = IO(())
+    def stop: IO[Unit] = tui.close
     implicit val interpreter: InteractOp ~> IO =
       LoggingInterpreter(logger, logPrints = false, tui.ConsoleInterpreter)
   }
   case object GUI extends UI {
-    def start: IO[Unit] = IO(gui.start())
-    def stop: IO[Unit] = IO(gui.stop())
+    def start: IO[Unit] = gui.start()
+    def stop: IO[Unit] = gui.stop()
     implicit val interpreter: InteractOp ~> IO =
       LoggingInterpreter(logger, logPrints = true, gui.GuiInterpreter)
   }

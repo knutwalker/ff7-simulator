@@ -26,6 +26,8 @@ import Scalaz._
 object Simulation {
   type IOState[s, a] = StateT[Interact, s, a]
 
+  private val battleMonad = MonadState[IOState, BattleField]
+
   def apply(field: BattleField): Interact[BattleField] =
     playAllRounds.eval(field)
 
@@ -135,6 +137,4 @@ object Simulation {
       val msg = "An attack should have been undone, but there was no history yet"
       Interact.showMessage(msg) >| bf
   }
-
-  private val battleMonad = MonadState[IOState, BattleField]
 }
