@@ -32,11 +32,11 @@ object Physical extends Formula {
       else Interact.point(Hit.missed)
     }
 
-  private def calculateIfHits(attacker: Attacker, target: Target) =
+  def calculateIfHits(attacker: Attacker, target: Target): Interact[Boolean] =
     calculateIfHitsPercent(attacker, target)
       .flatMap(h ⇒ percent.map(_ < h))
 
-  private def calculateIfHitsPercent(attacker: Attacker, target: Target) = {
+  def calculateIfHitsPercent(attacker: Attacker, target: Target): Interact[Int] = {
     // Lucky Hit:
     //   The Attacker has a [Lck / 4]% chance of landing a Lucky Hit.  If this is
     //   successful, then Hit% is immediately increased to 255%.
@@ -59,23 +59,23 @@ object Physical extends Formula {
     Interact.point(hitPercent)
   }
 
-  private def calculateDamage(attacker: Attacker, target: Target) = {
+  def calculateDamage(attacker: Attacker, target: Target): Interact[Hit] = {
     val damage = calculateBaseDamage(attacker, target)
     val criticalHits = calculateCritical(attacker, target)
 
     for {
       c ← criticalHits
-      d1 ← applyCritical(c, damage)
+      d1 ← Interact.point(applyCritical(c, damage))
       // TODO: rows
       d3 ← applyVariance(d1)
-      d4 ← applyBounds(d3)
+      d4 ← Interact.point(applyBounds(d3))
     } yield {
       if (c) Hit.critical(d4)
       else Hit(d4)
     }
   }
 
-  private def calculateBaseDamage(attacker: Attacker, target: Target): Int = {
+  def calculateBaseDamage(attacker: Attacker, target: Target): Int = {
     val base = attacker.attack.x + Rational(attacker.attack.x + attacker.level.x, 32).toInt * Rational(attacker.attack.x * attacker.level.x, 32).toInt
     //    val power = attacker.power.x * base
     //    val power = attacker.power.x.toDouble
@@ -83,25 +83,25 @@ object Physical extends Formula {
     ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
   }
 
-  private def calculateCritical(attacker: Attacker, target: Target) = {
+  def calculateCritical(attacker: Attacker, target: Target): Interact[Boolean] = {
     val criticalPercent = Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
     percent.map(_ <= criticalPercent)
   }
 
-  private def applyCritical(critical: Boolean, damage: Int) =
-    Interact.point(if (critical) damage * 2 else damage)
+  def applyCritical(critical: Boolean, damage: Int): Int =
+    if (critical) damage * 2 else damage
 
-  private def applyVariance(d: Int) =
-    damageVariation.map(m ⇒ Rational(d * m, 4096).toInt)
+  def applyVariance(d: Int): Interact[Int] =
+    damageVariation.map(m ⇒ Rational(d.toLong * m.toLong, 4096L).toInt)
 
-  private def applyBounds(damage: Int) =
-    Interact.point(min(9999, max(1, damage)))
+  def applyBounds(damage: Int): Int =
+    min(9999, max(1, damage))
 
-  private val percent = Interact
+  val percent: Interact[Int] = Interact
     .chooseInt(0, 65535)
     .map(i ⇒ Rational(i * 99, 65535).toInt + 1)
 
-  private val damageVariation = Interact
+  val damageVariation: Interact[Int] = Interact
     .chooseInt(0, 255)
     .map(_ + 3841)
 }
