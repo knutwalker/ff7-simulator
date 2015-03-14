@@ -24,7 +24,7 @@ import stats._
 import scalaz._, Scalaz._
 import Maybe._
 
-import com.typesafe.config.{ConfigList, ConfigObject, ConfigValue}
+import com.typesafe.config.{ConfigValueType, ConfigList, ConfigObject, ConfigValue}
 import spire.math.Rational
 
 import collection.JavaConverters._
@@ -55,19 +55,22 @@ object ConfigReader {
 
   implicit val string: ConfigReader[String] = new ConfigReader[String] {
     def read(v: ConfigValue): Val[String] =
-      get(v).successNel
+      if (v.valueType() == ConfigValueType.STRING)
+        get(v).successNel
+      else
+        s"[${v.unwrapped}] is not a string".failureNel
   }
 
   implicit val int: ConfigReader[Int] = new ConfigReader[Int] {
     def read(v: ConfigValue): Val[Int] =
-      TryVN(v.unwrapped().asInstanceOf[Int])
-        .orElse(TryVN(get(v).toInt))
+      TryVN(v.unwrapped.asInstanceOf[Int])
+        .orElse(TryVN(get(v).toInt).leftMap(_.map(_ ⇒ s"[${v.unwrapped}] is not an int")))
   }
 
   implicit val long: ConfigReader[Long] = new ConfigReader[Long] {
     def read(v: ConfigValue): Val[Long] =
-      TryVN(v.unwrapped().asInstanceOf[Long])
-        .orElse(TryVN(get(v).toLong))
+      TryVN(v.unwrapped.asInstanceOf[Long])
+        .orElse(TryVN(get(v).toLong).leftMap(_.map(_ ⇒ s"[${v.unwrapped}] is not a long")))
   }
 
   implicit val rational: ConfigReader[Rational] = new ConfigReader[Rational] {
@@ -78,10 +81,10 @@ object ConfigReader {
     private def parseString(x: String): Val[Rational] = {
       x.split("/") match {
         case Array(num, den) ⇒
-          (TryVN(num.trim.toLong) |@| TryVN(den.trim.toLong)) {
-            (n, d) ⇒ Rational(n, d)
-          }
-        case Array(f) ⇒ TryVN(f.trim.toLong).map(Rational(_))
+          val nv = TryVN(num.trim.toLong).leftMap(_.map(_ ⇒ s"[$num] is not an integral"))
+          val dv = TryVN(den.trim.toLong).leftMap(_.map(_ ⇒ s"[$den] is not an integral"))
+          (nv |@| dv) { Rational(_, _) }
+        case Array(f) ⇒ TryVN(f.trim.toLong).map(Rational(_)).leftMap(_.map(_ ⇒ s"[$f] is not an integral"))
         case _        ⇒ s"could not parse string $x to a Rational".failureNel
       }
     }
@@ -223,7 +226,7 @@ object ConfigReader {
             )
         }
 
-        (ai |@| make) { (a, m) ⇒ m(a) }
+        (make |@| ai) { (m, a) ⇒ m(a) }
       case x ⇒
         s"[$x] is not an object".failureNel
     }
@@ -288,19 +291,19 @@ object ConfigReader {
     def read(v: ConfigValue): Val[Encounter.Kind] = get(v).toLowerCase match {
       case "normal" ⇒ Encounter.Normal.successNel
       case "back"   ⇒ Encounter.Back.successNel
-      case _        ⇒ "encounter kind must be normal | back".failureNel
+      case _        ⇒ "encounter kind must be in [normal | back]".failureNel
     }
   }
 
   sealed trait Ref
 
-  private def get(v: ConfigValue): String = String.valueOf(v.unwrapped())
+  private def get(v: ConfigValue): String = String.valueOf(v.unwrapped)
 }
 object ConfigReaderImplicits {
   implicit class CastConfigObject(val v: ConfigObject) extends AnyVal {
     def nel[A](key: String)(implicit A: ConfigReader[A]): Val[A] =
       if (v.containsKey(key)) A.read(v.get(key))
-      else s"$v does not contain $key".failureNel
+      else s"The key [$key] is missing".failureNel
     def nel_?[A](key: String)(implicit A: ConfigReader[A]): Val[Option[A]] =
       if (v.containsKey(key)) A.read(v.get(key)).map(some)
       else none[A].successNel

@@ -22,20 +22,23 @@ import Scalaz._
 import com.typesafe.config.ConfigFactory
 
 import collection.JavaConverters._
+import collection.immutable.Set
 import scala.language.dynamics
 
 
 abstract class ConfigLoader[A](configPath: String, entityName: String)(implicit A: ConfigReader[A]) extends Dynamic {
+  import Validation.FlatMap._
 
   private lazy val loaded = {
-    val c = ConfigLoader.config.getObject(configPath)
-    c.asScala.map(_.map(A.read)).toMap
+    TryVN(ConfigLoader.config.getObject(configPath))
+      .map(c ⇒ c.asScala.map(_.map(A.read)).toMap)
   }
 
-  final def selectDynamic(name: String): Val[A] = loaded.getOrElse(
-    name, s"[$name] was not a configured $entityName".failureNel)
+  final def selectDynamic(name: String): Val[A] =
+    loaded.flatMap(_.getOrElse(name,
+      s"[$name] was not a configured $entityName".failureNel))
 
-  final def available = loaded.keySet
+  final def available = loaded.map(_.keySet).getOrElse(Set.empty)
 }
 object ConfigLoader {
   private val config = ConfigFactory.load()
