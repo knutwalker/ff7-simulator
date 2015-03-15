@@ -16,7 +16,7 @@
 
 package ff7
 
-import algebra._, LogLevel._, Interact._, InteractOp._
+import algebra._, Interact._
 import battle.{BattleField, Team}
 
 import scalaz._
@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory
 import util.Try
 
 object Main extends SafeApp {
-  private val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
+  private implicit val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
   override def runl(args: List[String]): IO[Unit] = {
     val Options(repetitions, ui) = parseOpts(args)
@@ -79,7 +79,7 @@ object Main extends SafeApp {
   val runRoundState: StateT[Interact, RoundState, RoundState] =
     StateT(rs ⇒ for {
       es ← enemies
-      f ← runRound(BattleField.init(rs.heroes, es))
+      f  ← runRound(BattleField.init(rs.heroes, es))
     } yield {
       val team = if (f.enemies.isHero) f.enemies else f.heroes
       RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
@@ -95,44 +95,12 @@ object Main extends SafeApp {
         .orElse(Some(arg.toLowerCase).collect {
           case "console" ⇒ opts.copy(ui = Console)
           case "gui"     ⇒ opts.copy(ui = GUI)
+          case "fx"      ⇒ opts.copy(ui = Fx)
         })
         .getOrElse(opts)
     }
 
   case class Options(repetitions: Int, ui: UI)
-
-  sealed trait UI {
-    def start: IO[Unit]
-    def stop: IO[Unit]
-    implicit def interpreter: InteractOp ~> IO
-  }
-  case object Console extends UI {
-    def start: IO[Unit] = IO(())
-    def stop: IO[Unit] = tui.close
-    implicit val interpreter: InteractOp ~> IO =
-      LoggingInterpreter(logger, logPrints = false, tui.ConsoleInterpreter)
-  }
-  case object GUI extends UI {
-    def start: IO[Unit] = gui.start()
-    def stop: IO[Unit] = gui.stop()
-    implicit val interpreter: InteractOp ~> IO =
-      LoggingInterpreter(logger, logPrints = true, gui.GuiInterpreter)
-  }
-
-  private def LoggingInterpreter(log: Logger, logPrints: Boolean, delegate: InteractOp ~> IO) = new (InteractOp ~> IO) {
-    def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-      case Log(x, Debug, Some(ex))     ⇒ IO(log.debug(x, ex))
-      case Log(x, Debug, None)         ⇒ IO(log.debug(x))
-      case Log(x, Info, Some(ex))      ⇒ IO(log.info(x, ex))
-      case Log(x, Info, None)          ⇒ IO(log.info(x))
-      case Log(x, Warn, Some(ex))      ⇒ IO(log.warn(x, ex))
-      case Log(x, Warn, None)          ⇒ IO(log.warn(x))
-      case Log(x, Error, Some(ex))     ⇒ IO(log.error(x, ex))
-      case Log(x, Error, None)         ⇒ IO(log.error(x))
-      case ShowMessage(s) if logPrints ⇒ IO(log.info(s)) >> delegate(fa)
-      case _                           ⇒ delegate(fa)
-    }
-  }
 
   case class RoundState(heroes: Team, rounds: Int, turns: Int)
 }

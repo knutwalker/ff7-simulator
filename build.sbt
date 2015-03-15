@@ -8,6 +8,7 @@ lazy val versions = new {
   val    rxswing = "0.22.0"
   val      scala = "2.11.6"
   val scalacheck = "1.12.2"
+  val    scalafx = "8.0.31-R7"
   val     scalaz = "7.1.1"
   val  shapeless = "0.3"
   val     specs2 = "3.0"
@@ -36,6 +37,7 @@ lazy val deps = new {
     "com.nicta"                   %% "rng"                        % rng
       exclude("org.scalaz", "scalaz-effect_2.11")
       exclude("org.scalaz", "scalaz-core_2.11")                                ,
+    "org.scalafx"                 %% "scalafx"                    % scalafx    ,
     "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
     "io.reactivex"                %% "rxscala"                    % rxscala    ,
     "io.reactivex"                 % "rxswing"                    % rxswing    )
