@@ -18,6 +18,7 @@ package ff7
 
 import algebra._, Interact._
 import battle.{BattleField, Team}
+import monsters.Monster
 
 import scalaz._
 import Scalaz._
@@ -26,28 +27,19 @@ import effect.{IO, SafeApp}
 import com.typesafe.scalalogging.Logger
 import org.slf4j.LoggerFactory
 
-import util.Try
+import scala.Predef._
 
 object Main extends SafeApp {
   private implicit val logger = Logger(LoggerFactory.getLogger(Simulation.getClass))
 
-  override def runl(args: List[String]): IO[Unit] = {
-    val Options(repetitions, ui) = parseOpts(args)
-    for {
-      _ ← ui.start
-      _ ← runRoundsIO(repetitions, ui)
-      _ ← ui.stop
-    } yield ()
-  }
+  override def runl(args: List[String]): IO[Unit] = for {
+    o ← Args.parse(args)
+    _ ← o.ui.start
+    _ ← runRoundsIO(o.repetitions, o.ui, o.enemies)
+    _ ← o.ui.stop
+  } yield ()
 
   def party = Characters.team("cloud2", "barret").toInteract
-
-  def enemies = Encounters.midgar1.traverse[Interact, NonEmptyList[String], Team] { es ⇒
-    for {
-      e ← Interact.oneOfL(es)
-      g ← Interact.oneOfL(e.groups)
-    } yield g.monsters
-  }.flatMap(_.toInteract)
 
   def program(field: BattleField): Interact[BattleField] = for {
     _      ← debug("Starting simulation")
@@ -57,26 +49,26 @@ object Main extends SafeApp {
     _      ← debug("Simulation finished")
   } yield result
 
-  def runRoundsIO(repetitions: Int, ui: UI): IO[RoundState] = {
+  def runRoundsIO(repetitions: Int, ui: UI, enemies: Interact[Team]): IO[RoundState] = {
     import ui.interpreter
-    runRounds(repetitions).run[IO]
+    runRounds(repetitions, enemies).run[IO]
   }
 
-  def runRounds(repetitions: Int): Interact[RoundState] = {
+  def runRounds(repetitions: Int, enemies: Interact[Team]): Interact[RoundState] = {
     for {
       p  ← party
-      rs ← runAllRoundsState(repetitions).eval(RoundState(p, 0, 0))
+      rs ← runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0))
       _  ← Interact.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
     } yield rs
   }
 
-  def runAllRoundsState(repetitions: Int): StateT[Interact, RoundState, RoundState] =
+  def runAllRoundsState(repetitions: Int, enemies: Interact[Team]): StateT[Interact, RoundState, RoundState] =
     StateT.stateTMonadState[RoundState, Interact]
-      .iterateUntil(runRoundState) { rs ⇒
+      .iterateUntil(runRoundState(enemies)) { rs ⇒
       rs.rounds >= repetitions || rs.heroes.alive.isEmpty
     }
 
-  val runRoundState: StateT[Interact, RoundState, RoundState] =
+  def runRoundState(enemies: Interact[Team]): StateT[Interact, RoundState, RoundState] =
     StateT(rs ⇒ for {
       es ← enemies
       f  ← runRound(BattleField.init(rs.heroes, es))
@@ -88,19 +80,86 @@ object Main extends SafeApp {
   def runRound(field: BattleField): Interact[BattleField] =
     program(field)
 
-  private def parseOpts(args: List[String]): Options =
-    args.foldLeft(Options(1, GUI)) { (opts, arg) ⇒
-      Try(java.lang.Integer.parseInt(arg)).toOption
-        .map(r ⇒ opts.copy(repetitions = r))
-        .orElse(Some(arg.toLowerCase).collect {
-          case "console" ⇒ opts.copy(ui = Console)
-          case "gui"     ⇒ opts.copy(ui = GUI)
-          case "fx"      ⇒ opts.copy(ui = Fx)
-        })
-        .getOrElse(opts)
-    }
-
-  case class Options(repetitions: Int, ui: UI)
-
   case class RoundState(heroes: Team, rounds: Int, turns: Int)
+
+  object Args {
+
+    def parse(args: List[String]): IO[Config] =
+      Options.parse(args)
+
+    case class Config(ui: UI, enemies: Interact[Team], repetitions: Int)
+    case class Options(ui: Option[String], repetitions: Int, monsters: List[(String, Int)])
+    object Options {
+      val empty = Options(None, 1, Nil)
+      val uis = List("console", "gui", "fx")
+
+      val parser = new scopt.OptionParser[Options]("ff7") {
+        var _writer = Writer[Vector[String], Unit](Vector.empty, ())
+
+        opt[Int]('r', "repetitions") action { (r, o) ⇒
+          o.copy(repetitions = r)
+        } validate { r ⇒
+          if (r > 0) success
+          else failure("repetitions must be > 0")
+        }
+
+        opt[String]('u', "ui") action { (u, o) ⇒
+          o.copy(ui = Some(u.toLowerCase))
+         } validate { x ⇒
+          if (Options.uis.contains(x.toLowerCase)) success
+          else failure(s"UI must be one of [${Options.uis.mkString(" | ")}]")
+        }
+
+        opt[Map[String, Int]]('m', "monster") unbounded() action { (m, o) ⇒
+          o.copy(monsters = o.monsters ::: m.toList)
+        } validate { case ms ⇒
+          ms.toList.traverse_[({type l[x] = Either[String, x]})#l] { case (m, c) ⇒
+            if (c > 0 && c <= 5) {
+              val monster = Monsters.selectDynamic(m)
+              monster.fold(es ⇒ failure(es.list.mkString(", ")), m ⇒ success)
+            }
+            else failure("count must be > 0 and <= 5")
+          }
+        }
+      }
+
+      def defaultEnemies =
+        Encounters.midgar1.traverse[Interact, NonEmptyList[String], Team] { es ⇒
+          for {
+            e ← Interact.oneOfL(es)
+            g ← Interact.oneOfL(e.groups)
+          } yield g.monsters
+        }.flatMap(_.toInteract)
+
+      def parse(args: List[String]): IO[Config] = IO {
+        parser.parse(args, empty).fold(sys.exit(-1)) { o ⇒
+          val team = o.monsters.toNel match {
+            case Some(monsterConfigs) ⇒
+              monsterConfigs.traverse1[Val, NonEmptyList[Monster]] { case (monsterName, count) ⇒
+                Monsters.selectDynamic(monsterName).map { monster ⇒
+                  if (count > 1) {
+                    Iterator.from(0)
+                      .map(o => 'A' + o)
+                      .map(_.toChar)
+                      .take(count)
+                      .map(suffix ⇒ monster.copy(name = s"${monster.name} $suffix"))
+                      .toList.toNel.get
+                  } else {
+                    NonEmptyList(monster)
+                  }
+                }
+              }.map(_.flatMap(x ⇒ x))
+                .map(ms => Team(ms.head, ms.tail, None))
+                .toInteract
+            case None ⇒ defaultEnemies
+          }
+          val ui = o.ui collect {
+            case "gui" ⇒ GUI
+            case "fx"  ⇒ Fx
+          } getOrElse Console
+          Config(ui, team, o.repetitions)
+        }
+      }
+    }
+  }
 }

@@ -10,6 +10,7 @@ lazy val versions = new {
   val scalacheck = "1.12.2"
   val    scalafx = "8.0.31-R7"
   val     scalaz = "7.1.1"
+  val      scopt = "3.3.0"
   val  shapeless = "0.3"
   val     specs2 = "3.0"
   val      spire = "0.9.1"
@@ -50,6 +51,7 @@ lazy val deps = new {
     "jline"                        % "jline"                      % jline      )
 
   val core = List(
+    "com.github.scopt"            %% "scopt"                      % scopt      ,
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
     "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
     "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
