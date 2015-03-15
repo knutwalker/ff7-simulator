@@ -38,8 +38,8 @@ object MonsterAttack {
     new MonsterAttack(name, cost, AttackType.Physical, FormulaType.Physical, power) {
       override def attackPercent: AttackPercent = percent
     }
-  def magical(name: String, cost: Option[MP], percent: MagicAttackPercent = MagicAttackPercent(100), power: Power = Power(1)): MonsterAttack =
-    new MonsterAttack(name, cost, AttackType.Magical, FormulaType.Magical, power) {
+  def magical(name: String, cost: MP, percent: MagicAttackPercent = MagicAttackPercent(100), power: Power = Power(1)): MonsterAttack =
+    new MonsterAttack(name, Some(cost), AttackType.Magical, FormulaType.Magical, power) {
       override def magicAttackPercent: MagicAttackPercent = percent
     }
 }

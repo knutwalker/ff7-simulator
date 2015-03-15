@@ -53,8 +53,7 @@ package reactor1 {
   object MonoDrive extends AI {
     val drillDrive = MonsterAttack.physical("Drilldrive")
     val fire = MonsterAttack.magical("Fire",
-      MP(4).some,
-      power = Power(Rational(1, 2)))
+      MP(4), power = Power(Rational(1, 2)))
 
     def setup(self: Monster): Interact[Monster] = Interact.point(self)
     def apply(self: Monster, targets: Team): Interact[BattleAttack] = {

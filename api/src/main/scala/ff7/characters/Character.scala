@@ -62,7 +62,7 @@ final case class Character(
     MonsterAttack.physical("Attack", attackPercent, power)
 
   def magicalAttack: MonsterAttack =
-    MonsterAttack.magical("Fire", Some(MP(4)), MagicAttackPercent(100), Power(Rational(1, 2)))
+    MonsterAttack.magical("Fire", MP(4), MagicAttackPercent(100), Power(Rational(1, 2)))
 
   def attackPhysical: Attacker =
     CharacterAttacks(this, physicalAttack)
