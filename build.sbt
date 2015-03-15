@@ -89,11 +89,6 @@ lazy val playables = project
   .settings(libraryDependencies ++= deps.playables)
   .dependsOn(api)
 
-lazy val formulas = project
-  .settings(name := "ff7-formulas")
-  .settings(ff7Settings: _*)
-  .dependsOn(api)
-
 lazy val gui = project
   .settings(name := "ff7-gui")
   .settings(ff7Settings: _*)
@@ -112,7 +107,7 @@ lazy val core = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
-  .dependsOn(formulas, gui, playables, tui)
+  .dependsOn(gui, playables, tui)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -133,8 +128,8 @@ lazy val parent = project.in(file("."))
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
   .settings(doNotPublish: _*)
-  .dependsOn(algebra, api, core, formulas, gui, playables, tests, tui)
-  .aggregate(algebra, api, core, dist, formulas, gui, playables, tests, tui)
+  .dependsOn(algebra, api, core, gui, playables, tests, tui)
+  .aggregate(algebra, api, core, dist, gui, playables, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
