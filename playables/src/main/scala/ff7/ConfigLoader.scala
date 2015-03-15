@@ -29,7 +29,7 @@ import scala.language.dynamics
 abstract class ConfigLoader[A](configPath: String, entityName: String)(implicit A: ConfigReader[A]) extends Dynamic {
   import Validation.FlatMap._
 
-  private lazy val loaded = {
+  private val loaded = {
     TryVN(ConfigLoader.config.getObject(configPath))
       .map(c ⇒ c.asScala.map(_.map(A.read)).toMap)
   }
