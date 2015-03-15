@@ -34,8 +34,13 @@ final case class MonsterAttacks(
   def attack: Attack = monster.attack
   def defense: Defense = monster.defense
   def defensePercent: DefensePercent = monster.defensePercent
+  def magicAttack: MagicAttack = monster.magicAttack
+  def magicDefense: MagicDefense = monster.magicDefense
+  def magicDefensePercent: MagicDefensePercent = monster.magicDefensePercent
   def attackPercent: AttackPercent = chosenAttack.attackPercent
+  def magicAttackPercent: MagicAttackPercent = chosenAttack.magicAttackPercent
+
   def asPerson: Person = monster
 
-  override def toString: String = s"$monster (${chosenAttack.name})"
+  override def toString: String = s"$monster ($chosenAttack)"
 }

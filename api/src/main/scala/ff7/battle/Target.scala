@@ -24,5 +24,7 @@ trait Target {
   def luck: Luck
   def defense: Defense
   def defensePercent: DefensePercent
+  def magicDefense: MagicDefense
+  def magicDefensePercent: MagicDefensePercent
   def asPerson: Person
 }

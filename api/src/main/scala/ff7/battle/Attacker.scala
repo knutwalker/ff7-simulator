@@ -26,6 +26,8 @@ trait Attacker {
   def power: Power
   def attack: Attack
   def attackPercent: AttackPercent
+  def magicAttack: MagicAttack
+  def magicAttackPercent: MagicAttackPercent
   def defensePercent: DefensePercent
   def asPerson: Person
   def chosenAttack: MonsterAttack

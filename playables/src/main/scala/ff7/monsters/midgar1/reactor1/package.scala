@@ -52,12 +52,23 @@ package reactor1 {
 
   object MonoDrive extends AI {
     val drillDrive = MonsterAttack.physical("Drilldrive")
-    val fire = MonsterAttack.physical(
-      "Fire", // Magical
-      power = Power(Rational(1, 2)), cost = some(MP(4)))
+    val fire = MonsterAttack.magical("Fire",
+      MP(4).some,
+      power = Power(Rational(1, 2)))
+
     def setup(self: Monster): Interact[Monster] = Interact.point(self)
     def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
-      Interact.fail("not yet implemented")
+      Interact.chance(1, 3).map { roll ⇒
+        if (roll && fire.available(self.mp)) {
+          val attack = fire
+          val target = targets.toNel.minimumBy1(_.asTarget.magicDefense)
+          self.attacks(target, attack)
+        } else {
+          val attack = drillDrive
+          val target = targets.toNel.minimumBy1(_.asTarget.defense)
+          self.attacks(target, attack)
+        }
+      }
     }
   }
 

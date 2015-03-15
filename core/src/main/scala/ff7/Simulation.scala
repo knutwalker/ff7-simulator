@@ -80,11 +80,12 @@ object Simulation {
   }
 
   def executeAttack(originalAttacker: Person, attacker: Attacker, target: Target): Interact[BattleResult] = {
-    attacker.chosenAttack.formulaType match {
-      case FormulaType.Physical ⇒
-        formulas.Physical(attacker, target)
-          .map(BattleResult(originalAttacker, attacker, target, _))
+    val formula = attacker.chosenAttack.formulaType match {
+      case FormulaType.Physical ⇒ formulas.Physical
+      case FormulaType.Magical  ⇒ formulas.Magical
     }
+    formula(attacker, target)
+      .map(BattleResult(originalAttacker, attacker, target, _))
   }
 
   def evaluateResult(bf: BattleField, br: BattleResult): Interact[BattleField] = br match {
@@ -105,11 +106,11 @@ object Simulation {
     val b = bf.round(br).copy(heroes = enemies, enemies = heroes).cycle
     val msg = h match {
       case Hit.Missed ⇒
-        s"$oa attacked $target using [${a.chosenAttack.name}] but missed"
+        s"$oa attacked $target using [${a.chosenAttack}] but missed"
       case Hit.Hits(x) ⇒
-        s"$oa attacked $target using [${a.chosenAttack.name}] and hit with $x damage"
+        s"$oa attacked $target using [${a.chosenAttack}] and hit with $x damage"
       case Hit.Critical(x) ⇒
-        s"$oa attacked $target using [${a.chosenAttack.name}] and hit critically with $x damage"
+        s"$oa attacked $target using [${a.chosenAttack}] and hit critically with $x damage"
     }
     Interact.showMessage(msg) >| b
   }

@@ -20,4 +20,5 @@ package battle
 sealed trait FormulaType
 object FormulaType {
   case object Physical extends FormulaType
+  case object Magical extends FormulaType
 }

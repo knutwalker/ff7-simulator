@@ -30,6 +30,7 @@ final case class DefensePercent(x: Int) extends AnyVal {
   def +(y: Int): DefensePercent = DefensePercent(x + y)
 }
 final case class MagicAttack(x: Int) extends AnyVal
+final case class MagicAttackPercent(x: Int) extends AnyVal
 final case class MagicDefense(x: Int) extends AnyVal {
   def +(y: Int): MagicDefense = MagicDefense(x + y)
 }

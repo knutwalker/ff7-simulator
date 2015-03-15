@@ -74,10 +74,11 @@ final case class Character(
   override def toString: String =
     s"$name [HP ${hp.x}/${maxHp.x}]"
 
-  //  def magicAttack = MagicAttack(magic.x)
-  //  def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
-  //  def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
+  def magicAttack = MagicAttack(magic.x)
+  def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
+  def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
 
+  def magicAttackPercent = MagicAttackPercent(100) // TODO: by attack
 }
 object Character {
 

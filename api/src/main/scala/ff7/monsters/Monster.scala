@@ -44,6 +44,8 @@ final case class Monster(
   luck: Luck,
   ai: AI) extends Person with Target {
 
+  def magicDefensePercent = MagicDefensePercent(0)
+
   def attacks(a: MonsterAttack): MonsterAttacks =
     MonsterAttacks(this, a)
 

@@ -77,8 +77,6 @@ object Physical extends Formula {
 
   def calculateBaseDamage(attacker: Attacker, target: Target): Int = {
     val base = attacker.attack.x + Rational(attacker.attack.x + attacker.level.x, 32).toInt * Rational(attacker.attack.x * attacker.level.x, 32).toInt
-    //    val power = attacker.power.x * base
-    //    val power = attacker.power.x.toDouble
     val power = attacker.power.x * 16
     ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
   }

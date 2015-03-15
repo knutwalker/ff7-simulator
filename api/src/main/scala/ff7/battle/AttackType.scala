@@ -20,4 +20,5 @@ package battle
 sealed trait AttackType
 object AttackType {
   case object Physical extends AttackType
+  case object Magical extends AttackType
 }
