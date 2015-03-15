@@ -1,12 +1,3 @@
-import com.typesafe.sbt.pgp.PgpKeys._
-import sbt._
-import sbt.Keys._
-import sbtrelease._
-import sbtrelease.ReleasePlugin._
-import sbtrelease.ReleasePlugin.ReleaseKeys._
-import sbtrelease.ReleaseStateTransformations._
-import xerial.sbt.Sonatype.SonatypeKeys._
-
 lazy val versions = new {
   val     config = "1.2.1"
   val      jline = "2.12.1"
@@ -102,8 +93,8 @@ lazy val tui = project
   .dependsOn(algebra)
 
 lazy val core = project
-  .configs(RunDebug)
-  .settings(inConfig(RunDebug)(Defaults.compileSettings): _*)
+  .configs(RunDebug, RunProfile)
+  .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.core)
@@ -112,7 +103,6 @@ lazy val core = project
 lazy val tests = project
   .settings(name := "ff7-tests")
   .settings(ff7Settings: _*)
-  .settings(doNotPublish: _*)
   .settings(libraryDependencies ++= deps.tests)
   .dependsOn(core)
 
@@ -123,11 +113,10 @@ lazy val dist = project
   )
 
 lazy val parent = project.in(file("."))
-  .configs(RunDebug)
-  .settings(inConfig(RunDebug)(Defaults.compileSettings): _*)
+  .configs(RunDebug, RunProfile)
+  .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
-  .settings(doNotPublish: _*)
   .dependsOn(algebra, api, core, gui, playables, tests, tui)
   .aggregate(algebra, api, core, dist, gui, playables, tests, tui)
   .settings(
@@ -137,20 +126,15 @@ lazy val parent = project.in(file("."))
 
 // =================================
 
-lazy val githubUser = SettingKey[String]("Github username")
-lazy val githubRepo = SettingKey[String]("Github repository")
-lazy val projectMaintainer = SettingKey[String]("Maintainer")
-lazy val buildFatJar = SettingKey[Boolean]("true builds a fat jar, false builds only an assembled jar sans dependencies")
-
-lazy val RunDebug = config("debug") extend Runtime
-
 lazy val buildSettings = List(
         organization := "de.knutwalker",
    projectMaintainer := "Paul Horn",
-          githubUser := "knutwalker",
-          githubRepo := "ff7-simulator",
         scalaVersion := versions.scala,
-         buildFatJar := true
+         buildFatJar := true,
+           startYear := Some(2015),
+        profilerPath := Path.userHome / "Downloads" /
+          "YourKit_Java_Profiler_2015_EAP_build_15028.app" / "Contents" / "Resources" /
+          "bin" / "mac" / "libyjpagent.jnilib"
 )
 
 lazy val commonSettings = List(
@@ -162,98 +146,31 @@ lazy val commonSettings = List(
     "-Ywarn-adapted-args" :: "-Ywarn-inaccessible" :: "-Ywarn-nullary-override" :: "-Ywarn-nullary-unit" :: Nil,
   scalacOptions in Test += "-Yrangepos",
   scalacOptions in (Compile, console) ~= (_ filterNot (x ⇒ x == "-Xfatal-warnings" || x.startsWith("-Ywarn"))),
-  scmInfo <<= (githubUser, githubRepo) { (u, r) ⇒ Some(ScmInfo(
-    url(s"https://github.com/$u/$r"),
-    s"scm:git:https://github.com/$u/$r.git",
-    Some(s"scm:git:ssh://git@github.com:$u/$r.git")
-  ))},
   shellPrompt := { state ⇒
     val name = Project.extract(state).currentRef.project
     (if (name == "parent") "" else name + " ") + "> "
   },
-  initialCommands in console := """import scalaz._, Scalaz._, ff7._, algebra._, battle._, characters._, monsters._""",
+  resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases"
+)
+
+lazy val runSettings = List(
+  initialCommands in      console := """import scalaz._, Scalaz._, ff7._, algebra._, battle._, characters._, monsters._""",
   initialCommands in consoleQuick := """import scalaz._, Scalaz._""",
-  logBuffered := false,
-  resolvers += "scalaz-bintray" at "http://dl.bintray.com/scalaz/releases",
-          fork in run       := true,
-  connectInput in run       := true,
-   javaOptions in RunDebug ++= List("-Xdebug", "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005"),
-          fork in RunDebug  := true,
-  connectInput in RunDebug  := true
-)
-
-lazy val publishSettings = List(
-                 homepage <<= (githubUser, githubRepo) { (u, r) => Some(url(s"https://github.com/$u/$r")) },
-                  licenses := List("Apache License, Verison 2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-                 startYear := Some(2015),
-         publishMavenStyle := true,
-   publishArtifact in Test := false,
-      pomIncludeRepository := { _ => false },
-  SonatypeKeys.profileName := "knutwalker",
-               tagComment <<= (version in ThisBuild) map (v => s"Release version $v"),
-            commitMessage <<= (version in ThisBuild) map (v => s"Set version to $v"),
-               versionBump := sbtrelease.Version.Bump.Bugfix,
-
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if (isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
-  pomExtra <<= (githubUser, projectMaintainer) { (u, m) ⇒
-    <developers>
-      <developer>
-        <id>${u}</id>
-        <name>${m}</name>
-        <url>http://knutwalker.de/</url>
-      </developer>
-    </developers>
-  },
-  releaseProcess := List[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    setReleaseVersion,
-    runClean,
-    runTest,
-    commitReleaseVersion,
-    tagRelease,
-    publishSignedArtifacts,
-    releaseToCentral,
-    setNextVersion,
-    commitNextVersion,
-    pushChanges,
-    publishArtifacts
-  )
-)
-
-lazy val publishSignedArtifacts = publishArtifacts.copy(
-  action = { st: State =>
-    val extracted = Project.extract(st)
-    val ref = extracted.get(Keys.thisProjectRef)
-    extracted.runAggregated(publishSigned in Global in ref, st)
-  },
-  enableCrossBuild = true
-)
-
-lazy val releaseToCentral = ReleaseStep(
-  action = { st: State =>
-    val extracted = Project.extract(st)
-    val ref = extracted.get(Keys.thisProjectRef)
-    extracted.runAggregated(sonatypeReleaseAll in Global in ref, st)
-  },
-  enableCrossBuild = true
-)
-
-lazy val doNotPublish = List(
-          publish := (),
-     publishLocal := (),
-  publishArtifact := false
+                      logBuffered := false,
+      javaOptions in     RunDebug ++= "-Xdebug" :: "-Xrunjdwp:transport=dt_socket,server=y,suspend=n,address=5005" :: Nil,
+      javaOptions in   RunProfile += s"-agentpath:${profilerPath.value.getAbsolutePath}=tracing",
+             fork in          run := true,
+     connectInput in          run := true,
+             fork in     RunDebug := true,
+     connectInput in     RunDebug := true,
+             fork in   RunProfile := true,
+     connectInput in   RunProfile := true
 )
 
 lazy val headerSettings =
   List(headers <<= (projectMaintainer, startYear) { (m, y) ⇒
-    val years = List(y.get, java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)).distinct.mkString(" – ")
+    val thisYear = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+    val years = List(y.getOrElse(thisYear), thisYear).distinct.mkString(" – ")
     val license =
       s"""|/*
           | * Copyright $years $m
@@ -278,17 +195,6 @@ lazy val headerSettings =
   inConfig(Compile)(compileInputs.in(compile) <<= compileInputs.in(compile).dependsOn(createHeaders.in(compile))) ++
   inConfig(Test)(compileInputs.in(compile) <<= compileInputs.in(compile).dependsOn(createHeaders.in(compile)))
 
-lazy val buildInfos = buildInfoSettings ++ List(
-  sourceGenerators in Test <+= buildInfo,
-  buildInfoPackage := "buildinfo",
-     buildInfoKeys := List[BuildInfoKey](
-       organization,
-       name in core,
-            version,
-       scalaVersion,
-  BuildInfoKey("dependencies" → (libraryDependencies in core).value.distinct))
-)
-
 lazy val buildsUberJar = List(
      assemblyJarName in assembly := { if (buildFatJar.value) s"${name.value}" else s"${name.value}_${version.value}.jar" },
   assemblyOutputPath in assembly := (target in dist).value / (assemblyJarName in assembly).value,
@@ -311,5 +217,14 @@ lazy val buildsUberJar = List(
 )
 
 lazy val ff7Settings =
-  buildSettings ++ commonSettings ++
-    publishSettings ++ releaseSettings ++ headerSettings ++ buildsUberJar
+  buildSettings ++ commonSettings ++ runSettings ++ headerSettings ++ buildsUberJar
+
+lazy val debugSettings = inConfig(RunDebug)(Defaults.compileSettings)
+lazy val profileSettings = inConfig(RunProfile)(Defaults.compileSettings)
+
+lazy val projectMaintainer = SettingKey[String]("Maintainer")
+lazy val buildFatJar = SettingKey[Boolean]("true builds a fat jar, false builds only an assembled jar sans dependencies")
+lazy val profilerPath = SettingKey[File]("path (directory) to Yourkit profiler agent")
+
+lazy val RunDebug = config("debug") extend Runtime
+lazy val RunProfile = config("profile") extend Runtime
