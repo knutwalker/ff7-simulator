@@ -75,5 +75,5 @@ final case class Monster(
   def e: Monster = copy(name = s"$name E")
 
   override def toString: String =
-    s"$name [HP ${hp.x}/${maxHp.x}]"
+    s"$name [HP ${hp.x}/${maxHp.x} | MP ${mp.x}/${maxMp.x}]"
 }

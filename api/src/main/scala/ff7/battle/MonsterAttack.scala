@@ -26,12 +26,12 @@ sealed class MonsterAttack(
   val formulaType: FormulaType,
   val power: Power) {
 
-  def available(mp: MP): Boolean = cost.fold(true)(_.x <= mp.x)
+  def availableFor(p: Person): Boolean = cost.fold(true)(_.x <= p.mp.x)
 
   def attackPercent: AttackPercent = AttackPercent(magicAttackPercent.x)
   def magicAttackPercent: MagicAttackPercent = MagicAttackPercent(attackPercent.x)
 
-  override def toString: String = s"$name${cost.fold("")(c ⇒ s" ($c MP)")}"
+  override def toString: String = s"$name${cost.fold("")(c ⇒ s" (${c.x} MP)")}"
 }
 object MonsterAttack {
   def physical(name: String, percent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): MonsterAttack =

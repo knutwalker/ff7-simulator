@@ -59,10 +59,12 @@ package reactor1 {
     def setup(self: Monster): Interact[Monster] = Interact.point(self)
     def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
       Interact.chance(1, 3).map { roll ⇒
-        if (roll && fire.available(self.mp)) {
+        if (roll && fire.availableFor(self)) {
           val attack = fire
           val target = targets.toNel.minimumBy1(_.asTarget.magicDefense)
-          self.attacks(target, attack)
+          self
+            .copy(mp = MP(self.mp.x - fire.cost.fold(0)(_.x)))
+            .attacks(target, attack)
         } else {
           val attack = drillDrive
           val target = targets.toNel.minimumBy1(_.asTarget.defense)

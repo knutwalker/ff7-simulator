@@ -29,6 +29,7 @@ import Scalaz._
 import std.list
 
 import shapeless.contrib.scalaz._
+import spire.math.Rational
 
 import math._
 
@@ -45,7 +46,7 @@ final case class Character(
   luck: Luck,
   xp: XP,
   weapon: Maybe[Weapon],
-  armour: Maybe[Armour]) extends Person with Target with Attacker {
+  armour: Maybe[Armour]) extends Person with Target {
 
   def power = weapon.foldMap(_.power)
   def attack = weapon.foldMap(_.attack) + strength.x
@@ -57,8 +58,17 @@ final case class Character(
   val asPerson: Person = this
   val isHero: Boolean = true
 
-  val chosenAttack: MonsterAttack =
+  def physicalAttack: MonsterAttack =
     MonsterAttack.physical("Attack", attackPercent, power)
+
+  def magicalAttack: MonsterAttack =
+    MonsterAttack.magical("Fire", Some(MP(4)), MagicAttackPercent(100), Power(Rational(1, 2)))
+
+  def attackPhysical: Attacker =
+    CharacterAttacks(this, physicalAttack)
+
+  def attackMagical: Attacker =
+    CharacterAttacks(copy(mp = MP(mp.x - magicalAttack.cost.fold(0)(_.x))), magicalAttack)
 
   def chooseAttack(opponents: Team, allies: Team): Interact[Special \/ BattleAttack] = {
     list.toNel(opponents.alivesInOrder)
@@ -71,40 +81,48 @@ final case class Character(
     case Hit.Critical(c) ⇒ copy(hp = HP(hp.x - c))
   }
 
+  def hasMagicAttack: Boolean = {
+    magicalAttack.cost.exists(_.x <= mp.x)
+  }
+
   override def toString: String =
-    s"$name [HP ${hp.x}/${maxHp.x}]"
+    s"$name [HP ${hp.x}/${maxHp.x} | MP ${mp.x}/${maxMp.x}]"
 
   def magicAttack = MagicAttack(magic.x)
   def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
   def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
-
-  def magicAttackPercent = MagicAttackPercent(100) // TODO: by attack
 }
 object Character {
 
   private def noAttack: Interact[Special \/ BattleAttack] =
     point(\/.right(BattleAttack.none))
 
-  private def selectAttack(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
+  private def selectAttack(c: Character, allies: Team)(persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
     val aliveAllies = allies.alivesInOrder
-    val currentAttacker = aliveAllies.indexOf(a.asPerson)
+    val currentAttacker = aliveAllies.indexOf(c.asPerson)
+    val actions: List[CharacterAction] = CharacterAction.actions.list.collect {
+      case a@CharacterAction.Magic if c.hasMagicAttack ⇒ a
+      case a@CharacterAction.Attack ⇒ a
+      case a@CharacterAction.Skip   ⇒ a
+    }
+
     for {
       _      ← showItems(formatItems(aliveAllies, currentAttacker), TeamId.Allies)
-      _      ← showMessage(s"$a: Choose your attack")
-      action ← readList(CharacterAction.actions, 0)
+      _      ← showMessage(s"$c: Choose your attack")
+      action ← readList(actions.toNel.get, 0) // TODO: actions should really be some, but just in case
       act    = action.map(_ | CharacterAction.skip)
-      result ← evaluateMaybeDecision(act, a, allies, persons)
+      result ← evaluateMaybeDecision(act, c, allies, persons)
     } yield result
   }
 
-  private def evaluateMaybeDecision(d: Special \/ CharacterAction, a: Attacker, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] =
-    d.traverse(evaluateDecision(_, a, as, ps)).map(_.flatMap(x ⇒ x))
+  private def evaluateMaybeDecision(d: Special \/ CharacterAction, c: Character, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] =
+    d.traverse(evaluateDecision(_, c, as, ps)).map(_.flatMap(x ⇒ x))
 
-  private def evaluateDecision(d: CharacterAction, a: Attacker, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = d match {
+  private def evaluateDecision(d: CharacterAction, c: Character, as: Team, ps: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = d match {
     case CharacterAction.Attack ⇒
-      selectPerson(a, as)(ps)
-//    case CharacterAction.Magic ⇒
-//      BattleAttack.none.right[Special].interact
+      selectPerson(c.attackPhysical, as, ps)
+    case CharacterAction.Magic ⇒
+      selectPerson(c.attackMagical, as, ps)
 //    case CharacterAction.Item ⇒
 //      BattleAttack.none.right[Special].interact
 //    case CharacterAction.Defend ⇒
@@ -113,7 +131,7 @@ object Character {
       BattleAttack.none.right[Special].interact
   }
 
-  private def selectPerson(a: Attacker, allies: Team)(persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
+  private def selectPerson(a: Attacker, allies: Team, persons: NonEmptyList[Person]): Interact[Special \/ BattleAttack] = {
     val aliveAllies = allies.alivesInOrder
     val currentAttacker = aliveAllies.indexOf(a.asPerson)
     for {

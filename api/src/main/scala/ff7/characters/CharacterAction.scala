@@ -21,16 +21,16 @@ import scalaz.NonEmptyList
 sealed trait CharacterAction
 object CharacterAction {
   val attack: CharacterAction = Attack
-//  val magic: CharacterAction = Magic
+  val magic: CharacterAction = Magic
 //  val item: CharacterAction = Item
 //  val defend: CharacterAction = Defend
   val skip: CharacterAction = Skip
 
   //  val actions = NonEmptyList(attack, magic, item, defend, skip)
-  val actions = NonEmptyList(attack, skip)
+  val actions = NonEmptyList(attack, magic, skip)
 
   case object Attack extends CharacterAction
-//  case object Magic extends CharacterAction
+  case object Magic extends CharacterAction
 //  case object Item extends CharacterAction
 //  case object Defend extends CharacterAction
   case object Skip extends CharacterAction
