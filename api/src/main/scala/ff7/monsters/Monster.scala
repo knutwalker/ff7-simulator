@@ -68,6 +68,12 @@ final case class Monster(
     case Hit.Critical(c) ⇒ copy(hp = HP(hp.x - c))
   }
 
+  def a: Monster = copy(name = s"$name A")
+  def b: Monster = copy(name = s"$name B")
+  def c: Monster = copy(name = s"$name C")
+  def d: Monster = copy(name = s"$name D")
+  def e: Monster = copy(name = s"$name E")
+
   override def toString: String =
     s"$name [HP ${hp.x}/${maxHp.x}]"
 }

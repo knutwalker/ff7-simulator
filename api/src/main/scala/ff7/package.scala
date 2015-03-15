@@ -17,24 +17,13 @@
 import ff7.algebra.Interact
 import ff7.battle.{Person, Team}
 
-import scalaz._, Scalaz._
-import Isomorphism._
-import Validation._
+import scalaz._, Validation._
 
 package object ff7 {
 
   type TeamF[x] = Team
 
   type Val[+A] = Validation[NonEmptyList[String], A]
-
-  val teamNelIso: Team <=> NonEmptyList[Person] =
-    new (Team <=> NonEmptyList[Person]) {
-      val to: (Team) ⇒ NonEmptyList[Person] = t ⇒ {
-        val (first, rest) = t.inOrder
-        NonEmptyList.nel(first, rest)
-      }
-      val from: (NonEmptyList[Person]) ⇒ Team = nel ⇒ Team(nel.head, nel.tail, None)
-    }
 
   private[this] def justMessage[A, F[_, _]: Bifunctor](f: F[Throwable, A]): F[String, A] =
     Bifunctor[F].leftMap(f)(_.getMessage)
@@ -59,12 +48,8 @@ package object ff7 {
     }
   }
 
-  implicit class NelTeam(val t: Team) extends AnyVal {
-    def toNel: NonEmptyList[Person] = teamNelIso.to(t)
-  }
-
   implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
-    def toTeam: Team = teamNelIso.from(ps)
+    def toTeam: Team = Team(ps.head, ps.tail, None)
   }
 
   implicit class AnyInteractOps[A](val x: A) extends AnyVal {

@@ -17,6 +17,8 @@
 package ff7
 package battle
 
+import scalaz.NonEmptyList
+
 final case class Team(first: Person, rest: List[Person], originalStart: Option[Int]) {
 
   def persons: List[Person] = first :: rest
@@ -61,6 +63,11 @@ final case class Team(first: Person, rest: List[Person], originalStart: Option[I
       if (idx == -1) this
       else copy(rest = rest.updated(idx, updated))
     }
+  }
+
+  def toNel = {
+    val (first, rest) = inOrder
+    NonEmptyList.nel(first, rest)
   }
 
   override def toString = s"Team(${persons.mkString(", ")})"
