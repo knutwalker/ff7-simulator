@@ -52,26 +52,7 @@ package object tui {
   private def readInput: IO[Input] =
     readsDefinitiveDirectionS.eval(())
 
-  private val readDirectionS: StateT[IO, Unit, Option[Input]] =
-    StateT((_: Unit) ⇒ readsDirection.map(x ⇒ ((), x)))
-
-  private val readsDefinitiveDirectionS: StateT[IO, Unit, Input] =
-    IndexedStateT.stateTMonadState[Unit, IO]
-      .iterateUntil(readDirectionS)(_.isDefined).map(_.get)
-
-  private def readsDirection: IO[Option[Input]] = readChar map {
-    case 10 | 13 | 32   ⇒ Input.ok.some     // 10,13 = Enter, 32 = Space
-    case 113            ⇒ Input.quit.some   // 113 = 1
-    case 127            ⇒ Input.undo.some   // 127 = Backspace
-    case 27             ⇒ Input.cancel.some // 27 = Escape
-    case 68 | 104 | 97  ⇒ Input.left.some   // 68 = Left, 104 = h, 97 = a
-    case 66 | 106 | 115 ⇒ Input.down.some   // 66 = Down, 106 = j, 115 = s
-    case 65 | 107 | 119 ⇒ Input.up.some     // 65 = Up, 107 = k, 119 = w
-    case 67 | 108 | 100 ⇒ Input.right.some  // 67 = Right, 108 = l, 100 = d
-    case _              ⇒ none[Input]
-  }
-
-  private def readChar = IO {
+  private val readChar = IO {
     val c = reader.readCharacter()
     if (c == 27) {  // escape
       val nbStream = reader.getInput.asInstanceOf[NonBlockingInputStream]
@@ -85,4 +66,23 @@ package object tui {
       } else c
     } else c
   }
+
+  private val readsDirection: IO[Option[Input]] = readChar map {
+    case 10 | 13 | 32   ⇒ Input.ok.some     // 10,13 = Enter, 32 = Space
+    case 113            ⇒ Input.quit.some   // 113 = 1
+    case 127            ⇒ Input.undo.some   // 127 = Backspace
+    case 27             ⇒ Input.cancel.some // 27 = Escape
+    case 68 | 104 | 97  ⇒ Input.left.some   // 68 = Left, 104 = h, 97 = a
+    case 66 | 106 | 115 ⇒ Input.down.some   // 66 = Down, 106 = j, 115 = s
+    case 65 | 107 | 119 ⇒ Input.up.some     // 65 = Up, 107 = k, 119 = w
+    case 67 | 108 | 100 ⇒ Input.right.some  // 67 = Right, 108 = l, 100 = d
+    case _              ⇒ none[Input]
+  }
+
+  private val readDirectionS: StateT[IO, Unit, Option[Input]] =
+    StateT((_: Unit) ⇒ readsDirection.map(x ⇒ ((), x)))
+
+  private val readsDefinitiveDirectionS: StateT[IO, Unit, Input] =
+    IndexedStateT.stateTMonadState[Unit, IO]
+      .iterateUntil(readDirectionS)(_.isDefined).map(_.get)
 }
