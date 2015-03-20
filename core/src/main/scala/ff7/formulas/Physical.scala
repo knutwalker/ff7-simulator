@@ -17,7 +17,7 @@
 package ff7
 package formulas
 
-import algebra.Interact
+import algebra.{Effect, Random}
 import battle.{Attacker, Hit, Target}
 
 import spire.math.Rational
@@ -26,17 +26,17 @@ import math._
 
 object Physical extends Formula {
 
-  def apply(attacker: Attacker, target: Target): Interact[Hit] =
+  def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] =
     calculateIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else Interact.point(Hit.missed)
+      else   Effect.point(Hit.missed)
     }
 
-  def calculateIfHits(attacker: Attacker, target: Target): Interact[Boolean] =
+  def calculateIfHits[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] =
     calculateIfHitsPercent(attacker, target)
       .flatMap(h ⇒ percent.map(_ < h))
 
-  def calculateIfHitsPercent(attacker: Attacker, target: Target): Interact[Int] = {
+  def calculateIfHitsPercent[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Int] = {
     // Lucky Hit:
     //   The Attacker has a [Lck / 4]% chance of landing a Lucky Hit.  If this is
     //   successful, then Hit% is immediately increased to 255%.
@@ -56,19 +56,19 @@ object Physical extends Formula {
     //   to 0%.
 
     val hitPercent = ((attacker.dexterity / 4).x + attacker.attackPercent.x) + attacker.defensePercent.x - target.defensePercent.x
-    Interact.point(hitPercent)
+    Effect.point(hitPercent)
   }
 
-  def calculateDamage(attacker: Attacker, target: Target): Interact[Hit] = {
+  def calculateDamage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
     val damage = calculateBaseDamage(attacker, target)
     val criticalHits = calculateCritical(attacker, target)
 
     for {
       c ← criticalHits
-      d1 ← Interact.point(applyCritical(c, damage))
+      d1 ← Effect.point(applyCritical(c, damage))
       // TODO: rows
       d3 ← applyVariance(d1)
-      d4 ← Interact.point(applyBounds(d3))
+      d4 ← Effect.point(applyBounds(d3))
     } yield {
       if (c) Hit.critical(d4)
       else Hit(d4)
@@ -81,7 +81,7 @@ object Physical extends Formula {
     ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
   }
 
-  def calculateCritical(attacker: Attacker, target: Target): Interact[Boolean] = {
+  def calculateCritical[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = {
     val criticalPercent = Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
     percent.map(_ <= criticalPercent)
   }
@@ -89,17 +89,19 @@ object Physical extends Formula {
   def applyCritical(critical: Boolean, damage: Int): Int =
     if (critical) damage * 2 else damage
 
-  def applyVariance(d: Int): Interact[Int] =
+  def applyVariance[F[_]: Random](d: Int): Effect[F, Int] =
     damageVariation.map(m ⇒ Rational(d.toLong * m.toLong, 4096L).toInt)
 
   def applyBounds(damage: Int): Int =
     min(9999, max(1, damage))
 
-  val percent: Interact[Int] = Interact
+  def percent[F[_]: Random]: Effect[F, Int] =
+    Effect
     .chooseInt(0, 65535)
     .map(i ⇒ Rational(i * 99, 65535).toInt + 1)
 
-  val damageVariation: Interact[Int] = Interact
+  def damageVariation[F[_]: Random]: Effect[F, Int] =
+    Effect
     .chooseInt(0, 255)
     .map(_ + 3841)
 }

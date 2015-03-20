@@ -17,23 +17,18 @@
 package ff7
 package gui
 
-import algebra.{Input, TeamId, UiItem, InteractOp}
-import algebra.InteractOp.{Fail, Log, ReadInput, ChooseInt, ShowMessage, ShowItems}
+import algebra._, InteractOp._
 
-import com.nicta.rng.Rng
 import scalaz._
 import effect.IO
 
 
 object FxUI {
-  implicit val Interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
+  val Interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case ShowItems(ps, id) ⇒ printsPersons(ps, id)
       case ShowMessage(s)    ⇒ printsString(s)
-      case ChooseInt(l, u)   ⇒ Rng.chooseint(l, u).run
       case ReadInput         ⇒ readsInput
-      case Log(_, _, _)      ⇒ IO(())
-      case Fail(reason)      ⇒ IO.throwIO(new RuntimeException(reason))
     }
   }
 

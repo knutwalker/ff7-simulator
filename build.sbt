@@ -35,9 +35,6 @@ lazy val deps = new {
 
   val gui = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "com.nicta"                   %% "rng"                        % rng
-      exclude("org.scalaz", "scalaz-effect_2.11")
-      exclude("org.scalaz", "scalaz-core_2.11")                                ,
     "org.scalafx"                 %% "scalafx"                    % scalafx    ,
     "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
     "io.reactivex"                %% "rxscala"                    % rxscala    ,
@@ -45,14 +42,14 @@ lazy val deps = new {
 
   val tui = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "jline"                        % "jline"                      % jline      )
+
+  val main = List(
     "com.nicta"                   %% "rng"                        % rng
       exclude("org.scalaz", "scalaz-effect_2.11")
       exclude("org.scalaz", "scalaz-core_2.11")                                ,
-    "jline"                        % "jline"                      % jline      )
-
-  val core = List(
-    "com.github.scopt"            %% "scopt"                      % scopt      ,
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
+    "com.github.scopt"            %% "scopt"                      % scopt      ,
     "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
     "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
     "org.apache.logging.log4j"     % "log4j-slf4j-impl"           % log4j      )
@@ -99,10 +96,17 @@ lazy val tui = project
 lazy val core = project
   .configs(RunDebug, RunProfile)
   .settings(debugSettings ++ profileSettings: _*)
+  .settings(name := "ff7-core")
+  .settings(ff7Settings: _*)
+  .dependsOn(playables)
+
+lazy val main = project
+  .configs(RunDebug, RunProfile)
+  .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.core)
-  .dependsOn(gui, playables, tui)
+  .settings(libraryDependencies ++= deps.main)
+  .dependsOn(core, gui, tui)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -121,8 +125,8 @@ lazy val parent = project.in(file("."))
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
-  .dependsOn(algebra, api, core, gui, playables, tests, tui)
-  .aggregate(algebra, api, core, dist, gui, playables, tests, tui)
+  .dependsOn(algebra, api, core, gui, main, playables, tests, tui)
+  .aggregate(algebra, api, core, dist, gui, main, playables, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false

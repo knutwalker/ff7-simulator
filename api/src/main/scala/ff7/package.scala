@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import ff7.algebra.Interact
+import ff7.algebra.Effect
 import ff7.battle.{Person, Team}
 
 import scalaz._, Validation._
@@ -42,9 +42,9 @@ package object ff7 {
   }
 
   implicit final class ValidationOps[E, A](val v: NonEmptyList[E] \?/ A) extends AnyVal {
-    def toInteract: Interact[A] = v match {
-      case Success(x) ⇒ Interact.point(x)
-      case Failure(es) ⇒ Interact.fail(es.list.mkString("\n", "\n", "\n"))
+    def toEffect[F[_]]: Effect[F, A] = v match {
+      case Success(x) ⇒ Effect.point(x)
+      case Failure(es) ⇒ Effect.fail(es.list.mkString("\n", "\n", "\n"))
     }
   }
 
@@ -53,12 +53,6 @@ package object ff7 {
   }
 
   implicit class AnyInteractOps[A](val x: A) extends AnyVal {
-    def interact: Interact[A] = Interact.point(x)
-  }
-
-  implicit class StringInteractOps(val x: String) extends AnyVal {
-    def debug: Interact[Unit] = Interact.debug(x)
-    def info: Interact[Unit] = Interact.info(x)
-    def warn: Interact[Unit] = Interact.warn(x)
+    def effect[F[_]]: Effect[F, A] = Effect.point(x)
   }
 }

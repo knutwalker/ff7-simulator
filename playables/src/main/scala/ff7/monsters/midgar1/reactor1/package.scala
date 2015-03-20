@@ -34,19 +34,19 @@ package reactor1 {
     val machineGun = MonsterAttack.physical("Machine Gun")
     val tonfa = MonsterAttack.physical("Tonfa",
       AttackPercent(85), Power(Rational(3, 2)))
-    def attack =
+    def attack[F[_] : Random] =
       if (true) // if (heroes.rowPosition(self) == FrontRow)
-        Interact.choose(1, 2, tonfa, machineGun)
+        Effect.choose(1, 2, tonfa, machineGun)
       else
-        Interact.choose(1, 6, tonfa, machineGun)
+        Effect.choose(1, 6, tonfa, machineGun)
   }
 
   object GuardHound extends SimpleAi {
     val bite = MonsterAttack.physical("Bite")
     val tentacle = MonsterAttack.physical("Tentacle",
       AttackPercent(90), Power(Rational(3, 2)))
-    def attack = Interact.choose(1, 3, tentacle, bite)
-    override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
+    def attack[F[_] : Random] = Effect.choose(1, 3, tentacle, bite)
+    override def target[F[_] : Random](targets: Team) = targets.toNel.minimumBy1(_.hp)
   }
 
 
@@ -55,9 +55,11 @@ package reactor1 {
     val fire = MonsterAttack.magical("Fire",
       MP(4), power = Power(Rational(1, 2)))
 
-    def setup(self: Monster): Interact[Monster] = Interact.point(self)
-    def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
-      Interact.chance(1, 3).map { roll ⇒
+    def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
+      Effect.point(self)
+
+    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
+      Effect.chance(1, 3).map { roll ⇒
         if (roll && fire.availableFor(self)) {
           val attack = fire
           val target = targets.toNel.minimumBy1(_.asTarget.magicDefense)
@@ -70,24 +72,23 @@ package reactor1 {
           self.attacks(target, attack)
         }
       }
-    }
   }
 
   object Grunt extends SimpleAi {
     val handClaw = MonsterAttack.physical("Handclaw")
     val beamGun = MonsterAttack.physical("Beam Gun",
       power = Power(Rational(9, 8)))
-    def attack = if (true) { // if (heroes.rowPosition(self) == FrontRow)
-      Interact.choose(1, 2, beamGun, handClaw)
+    def attack[F[_] : Random] = if (true) { // if (heroes.rowPosition(self) == FrontRow)
+      Effect.choose(1, 2, beamGun, handClaw)
     } else {
-      Interact.choose(1, 12, handClaw, beamGun)
+      Effect.choose(1, 12, handClaw, beamGun)
     }
   }
 
   object FirstRay extends SimpleAi {
     val laserCannon = MonsterAttack.physical("Laser Cannon")
     private val count = 0
-    override def target(targets: Team) = {
+    override def target[F[_] : Random](targets: Team) = {
       if (count == 0) {
         targets.toNel.maximumBy1(_.hp)
       } else {
@@ -95,7 +96,7 @@ package reactor1 {
         targets.toNel.maximumBy1(_.hp)
       }
     }
-    def attack = laserCannon
+    def attack[F[_] : Random] = laserCannon
   }
 
   object Sweeper extends AI {
@@ -107,30 +108,30 @@ package reactor1 {
       AttackPercent(75), Power(Rational(3, 2)))
 
     lazy val state1: AI = new SimpleAi {
-      def attack = smokeShot
+      def attack[F[_] : Random] = smokeShot
       override def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
     lazy val state2: AI = new SimpleAi {
-      def attack = machineGun
-      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
+      def attack[F[_] : Random] = machineGun
+      override def target[F[_] : Random](targets: Team) = targets.toNel.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
     lazy val state3: AI = new SimpleAi {
-      def attack = doubleMachineGun
-      override def target(targets: Team) = targets.toNel.minimumBy1(_.hp)
+      def attack[F[_] : Random] = doubleMachineGun
+      override def target[F[_] : Random](targets: Team) = targets.toNel.minimumBy1(_.hp)
       override def modify(self: Monster): Monster = self.copy(ai = state1)
     }
 
-    override def setup(self: Monster) =
-      Interact.chooseInt(0, 3).map {
+    override def setup[F[_] : Random](self: Monster) =
+      Effect.chooseInt(0, 3).map {
         case 0 ⇒ self.copy(ai = state1)
         case 1 ⇒ self.copy(ai = state2)
         case _ ⇒ self.copy(ai = state3)
       }
 
-    def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-      Interact.fail("setup routine did not run")
+    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
+      Effect.fail("setup routine did not run")
   }
 }

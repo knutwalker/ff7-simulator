@@ -15,10 +15,11 @@
  */
 
 package ff7
+package formulas
 
-import algebra.Interact
-import battle.{Attacker, Hit, Target}
+import algebra.{Effect, Random}
+import battle.{Hit, Target, Attacker}
 
-package object formulas {
-  type Formula = ((Attacker, Target) ⇒ Interact[Hit])
+trait Formula {
+  def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit]
 }

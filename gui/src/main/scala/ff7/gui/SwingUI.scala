@@ -17,27 +17,20 @@
 package ff7
 package gui
 
-import algebra._
-import algebra.InteractOp._
+import algebra._, InteractOp._
 
 import scalaz.effect.IO
 import scalaz.~>
-
-import com.nicta.rng.Rng
 
 import scala.swing.Swing
 
 
 object SwingUI {
-
-  implicit val Interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
+  val Interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case ShowItems(ps, id) ⇒ printsPersons(ps, id)
       case ShowMessage(s)    ⇒ printsString(s)
-      case ChooseInt(l, u)   ⇒ Rng.chooseint(l, u).run
       case ReadInput         ⇒ readsInput
-      case Log(_, _, _)      ⇒ IO(())
-      case Fail(reason)      ⇒ IO.throwIO(new RuntimeException(reason))
     }
   }
 

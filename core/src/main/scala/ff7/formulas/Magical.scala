@@ -17,7 +17,7 @@
 package ff7
 package formulas
 
-import algebra.Interact
+import algebra.{Effect, Random}
 import battle.{Attacker, Hit, Target}
 
 import spire.math.Rational
@@ -26,31 +26,32 @@ import math._
 
 object Magical extends Formula {
 
-  def apply(attacker: Attacker, target: Target): Interact[Hit] = {
+  def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
     checkIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else Interact.point(Hit.missed)
+      else   Effect.point(Hit.missed)
     }
   }
 
-  def checkIfHits(attacker: Attacker, target: Target): Interact[Boolean] = for {
+  def checkIfHits[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = for {
     instantMiss ← checkMagicDefense(target)
-    hits ← if (instantMiss) Interact.point(false) else checkHitsPercentage(attacker, target)
+    hits ← if (instantMiss) Effect.point[F, Boolean](false)
+           else             checkHitsPercentage(attacker, target)
   } yield hits
 
-  def checkMagicDefense(target: Target): Interact[Boolean] =
-    Interact.percent(target.magicDefensePercent.x)
+  def checkMagicDefense[F[_]: Random](target: Target): Effect[F, Boolean] =
+    Effect.percent(target.magicDefensePercent.x)
 
-  def checkHitsPercentage(attacker: Attacker, target: Target): Interact[Boolean] = {
+  def checkHitsPercentage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = {
     val hitp = attacker.magicAttackPercent.x + attacker.level.x - (target.level.x / 2) - 1
-    Interact.chooseInt(0, 99).map(_ < hitp)
+    Effect.chooseInt(0, 99).map(_ < hitp)
   }
 
-  def calculateDamage(attacker: Attacker, target: Target): Interact[Hit] = {
+  def calculateDamage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
     val damage = calculateBaseDamage(attacker, target)
     for {
       d1 ← applyVariance(damage)
-      d2 ← Interact.point(applyBounds(d1))
+      d2 ← Effect.point(applyBounds(d1))
     } yield Hit(d2)
   }
 
@@ -60,13 +61,13 @@ object Magical extends Formula {
     ((power * (512 - target.magicDefense.x) * base) / (16 * 512)).toInt
   }
 
-  def applyVariance(d: Int): Interact[Int] =
+  def applyVariance[F[_]: Random](d: Int): Effect[F, Int] =
     damageVariation.map(m ⇒ Rational(d.toLong * m.toLong, 4096L).toInt)
 
   def applyBounds(damage: Int): Int =
     min(9999, max(1, damage))
 
-  val damageVariation: Interact[Int] = Interact
-    .chooseInt(0, 255)
+  def damageVariation[F[_]: Random]: Effect[F, Int] =
+    Effect.chooseInt(0, 255)
     .map(_ + 3841)
 }

@@ -17,13 +17,35 @@
 package ff7
 package algebra
 
+import scalaz.Inject
 
 sealed trait InteractOp[A]
+
 object InteractOp {
-  case class  ShowMessage(s: String)                                 extends InteractOp[Unit]
-  case class  ShowItems(ps: List[UiItem], id: TeamId)                extends InteractOp[Unit]
-  case class  Log(x: String, level: LogLevel, ex: Option[Throwable]) extends InteractOp[Unit]
-  case class  ChooseInt(lowerInclusive: Int, upperInclusive: Int)    extends InteractOp[Int]
-  case class  Fail[A](reason: String)                                extends InteractOp[A]
-  case object ReadInput                                              extends InteractOp[Input]
+  case class ShowMessage(s: String)
+    extends InteractOp[Unit]
+
+  case class ShowItems(ps: List[UiItem], id: TeamId)
+    extends InteractOp[Unit]
+
+  case object ReadInput
+    extends InteractOp[Input]
+
+
+  type Injects[F[_]] = Inject[InteractOp, F]
+
+  implicit def instance[F[_]: Injects]: Interact[F] = new Interact[F]
+}
+
+class Interact[F[_]: InteractOp.Injects] {
+  import InteractOp._
+
+  def showMessage(s: String): Effect[F, Unit] =
+    Effect(ShowMessage(s))
+
+  def showItems(ps: List[UiItem], id: TeamId): Effect[F, Unit] =
+    Effect(ShowItems(ps, id))
+
+  val readInput: Effect[F, Input] =
+    Effect(ReadInput)
 }

@@ -17,7 +17,7 @@
 package ff7
 package battle
 
-import algebra.{Input, Interact}
+import algebra.{Interact, Random, Effect, Input}
 import stats._
 
 import scalaz.\/
@@ -27,7 +27,7 @@ trait Person {
   def hp: HP
   def mp: MP
   def asTarget: Target
-  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack]
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAttack]
   def isHero: Boolean
   def hit(h: Hit): Person
 }

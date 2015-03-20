@@ -17,12 +17,14 @@
 package ff7
 package monsters
 
-import algebra.Interact
+import algebra.{Effect, Random}
 import battle.{BattleAttack, Team}
 
 object NoopAi extends AI {
-  def setup(self: Monster): Interact[Monster] =
-    Interact.point(self)
-  def apply(self: Monster, targets: Team): Interact[BattleAttack] =
-    Interact.point(BattleAttack.none)
+
+  def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
+    Effect.point(self)
+
+  def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
+    Effect.point(BattleAttack.none)
 }

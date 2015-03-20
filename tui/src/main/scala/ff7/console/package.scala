@@ -16,26 +16,21 @@
 
 package ff7
 
-import algebra._
-import algebra.InteractOp._
+import algebra._, InteractOp._
 
 import scalaz._, Scalaz._
 import effect.IO
 
-import com.nicta.rng.Rng
 import jline.console.ConsoleReader
 import jline.internal.NonBlockingInputStream
 
 package object tui {
 
-  implicit val ConsoleInterpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
+  val Interpreter: InteractOp ~> IO = new (InteractOp ~> IO) {
     def apply[A](fa: InteractOp[A]): IO[A] = fa match {
       case ShowItems(ps, _) ⇒ printPersons(ps)
       case ShowMessage(s)   ⇒ IO.putStrLn(s"  ~~ ${Console.GREEN}$s${Console.RESET}")
-      case ChooseInt(l, u)  ⇒ Rng.chooseint(l, u).run
       case ReadInput        ⇒ readInput
-      case Log(_, _, _)     ⇒ IO(())
-      case Fail(reason)     ⇒ IO.throwIO(new RuntimeException(reason))
     }
   }
 

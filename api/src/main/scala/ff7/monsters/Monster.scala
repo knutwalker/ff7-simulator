@@ -18,7 +18,7 @@ package ff7
 package monsters
 
 import algebra._
-import algebra.Interact._
+import algebra.Effect.point
 import battle._
 import stats._
 
@@ -56,9 +56,10 @@ final case class Monster(
   val asPerson: Person = this
   val isHero: Boolean = false
 
-  def chooseAttack(opponents: Team, allies: Team): Interact[Input.Special \/ BattleAttack] = {
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAttack] = {
     opponents.alives.toNel
-      .fold(point(BattleAttack.none))(ops ⇒ ai(this, ops.toTeam))
+      .some(ops ⇒ ai.apply(this, ops.toTeam))
+      .none(point(BattleAttack.none))
       .map(_.right)
   }
 

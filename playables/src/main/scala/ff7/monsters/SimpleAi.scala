@@ -21,19 +21,27 @@ import algebra._
 import battle.{Team, Person, MonsterAttack, BattleAttack}
 
 trait SimpleAi extends AI {
-  def attack: Interact[MonsterAttack]
-  def attack(self: Monster): Interact[MonsterAttack] = attack
-  def target(targets: Team): Interact[Person] = Interact.oneOfL(targets.toNel)
-  def modify(self: Monster): Monster = self
+  def attack[F[_] : Random]: Effect[F, MonsterAttack]
 
-  final def apply(self: Monster, targets: Team): Interact[BattleAttack] = {
+  def attack[F[_] : Random](self: Monster): Effect[F, MonsterAttack] =
+    attack
+
+  def target[F[_] : Random](targets: Team): Effect[F, Person] =
+    Effect.oneOfL(targets.toNel)
+
+  def modify(self: Monster): Monster =
+    self
+
+  final def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] = {
     val tar = target(targets)
     val att = attack(self)
     val mon = modify(self)
     tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
   }
 
-  def setup(self: Monster): Interact[Monster] = Interact.point(self)
+  def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
+    Effect.point(self)
 
-  implicit protected def liftInteract[A](a: A): Interact[A] = Interact.point(a)
+  implicit protected def liftInteract[F[_], A](a: A): Effect[F, A] =
+    Effect.point(a)
 }
