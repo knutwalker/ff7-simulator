@@ -29,7 +29,7 @@ lazy val deps = new {
   val algebra = List(
     "org.scalaz"                  %% "scalaz-core"                % scalaz     )
 
-  val playables = List(
+  val items = List(
     "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
@@ -81,10 +81,10 @@ lazy val api = project
   .settings(libraryDependencies ++= deps.api)
   .dependsOn(algebra)
 
-lazy val playables = project
-  .settings(name := "ff7-playables")
+lazy val items = project
+  .settings(name := "ff7-items")
   .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.playables)
+  .settings(libraryDependencies ++= deps.items)
   .dependsOn(api)
 
 lazy val core = project
@@ -92,7 +92,7 @@ lazy val core = project
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-core")
   .settings(ff7Settings: _*)
-  .dependsOn(playables)
+  .dependsOn(items)
 
 lazy val gui = project.in(file("interpreters") / "gui")
   .settings(name := "ff7-interpreter-gui")
@@ -143,8 +143,8 @@ lazy val parent = project.in(file("."))
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
-  .dependsOn(algebra, api, core, gui, log, main, playables, random, tests, tui)
-  .aggregate(algebra, api, core, dist, gui, log, main, playables, random, tests, tui)
+  .dependsOn(algebra, api, core, gui, items, log, main, random, tests, tui)
+  .aggregate(algebra, api, core, dist, gui, items, log, main, random, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
