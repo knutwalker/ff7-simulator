@@ -14,7 +14,7 @@ lazy val versions = new {
   val  shapeless = "0.3"
   val     specs2 = "3.0"
   val      spire = "0.9.1"
-  val      swing = "1.0.1"
+  val scalaSwing = "1.0.1"
   val  zForSpecs = "0.3.0"
 }
 
@@ -36,16 +36,21 @@ lazy val deps = new {
   val main = List(
     "com.github.scopt"            %% "scopt"                      % scopt      )
 
-  val gui = List(
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "org.scalafx"                 %% "scalafx"                    % scalafx    ,
-    "org.scala-lang.modules"      %% "scala-swing"                % swing      ,
-    "io.reactivex"                %% "rxscala"                    % rxscala    ,
-    "io.reactivex"                 % "rxswing"                    % rxswing    )
-
   val tui = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "jline"                        % "jline"                      % jline      )
+
+  val swing = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "org.scala-lang.modules"      %% "scala-swing"                % scalaSwing ,
+    "io.reactivex"                %% "rxscala"                    % rxscala    ,
+    "io.reactivex"                 % "rxswing"                    % rxswing
+      exclude("io.reactivex", "rxjava")                                        )
+
+  val sfx = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
+    "org.scalafx"                 %% "scalafx"                    % scalafx    ,
+    "io.reactivex"                %% "rxscala"                    % rxscala    )
 
   val random = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
@@ -94,16 +99,22 @@ lazy val core = project
   .settings(ff7Settings: _*)
   .dependsOn(items)
 
-lazy val gui = project.in(file("interpreters") / "gui")
-  .settings(name := "ff7-interpreter-gui")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.gui)
-  .dependsOn(algebra)
-
 lazy val tui = project.in(file("interpreters") / "tui")
   .settings(name := "ff7-interpreter-tui")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.tui)
+  .dependsOn(algebra)
+
+lazy val swing = project.in(file("interpreters") / "swing")
+  .settings(name := "ff7-interpreter-swing")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.swing)
+  .dependsOn(algebra)
+
+lazy val sfx = project.in(file("interpreters") / "sfx")
+  .settings(name := "ff7-interpreter-scala-fx")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.sfx)
   .dependsOn(algebra)
 
 lazy val random = project.in(file("interpreters") / "random")
@@ -124,7 +135,7 @@ lazy val main = project
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.main)
-  .dependsOn(core, gui, tui, random, log)
+  .dependsOn(core, tui, swing, sfx, random, log)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -143,8 +154,8 @@ lazy val parent = project.in(file("."))
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
-  .dependsOn(algebra, api, core, gui, items, log, main, random, tests, tui)
-  .aggregate(algebra, api, core, dist, gui, items, log, main, random, tests, tui)
+  .dependsOn(algebra, api, core, items, log, main, random, sfx, swing, tests, tui)
+  .aggregate(algebra, api, core, dist, items, log, main, random, sfx, swing, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
