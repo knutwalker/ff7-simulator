@@ -26,38 +26,50 @@ import Scalaz._
 
 object Program {
 
+  type ETeam[F[_]] = Effect[F, Val[Team]]
+
   def runRounds[F[_]: Log: Interact: Random](
     repetitions: Int,
-    enemies: Effect[F, Team])
-  : Effect[F, RoundState] = {
-    for {
-      p  ← party
-      rs ← runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0))
-      _  ← info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.")
-    } yield rs
+    enemies: ETeam[F])
+  : Effect[F, Option[RoundState]] = {
+    party.flatMap { pVal ⇒
+      pVal.fold(
+        fail = errors ⇒ errors.traverse_[({type λ[α] = Effect[F, α]})#λ](s ⇒ Effect.warn[F](s)) as none,
+        succ = { p ⇒
+          runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0)).flatMap { rs ⇒
+            info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.") as rs.some
+          }
+        }
+      )
+    }
   }
 
-  def party[F[_]] =
-    Characters.team("cloud2", "barret").toEffect[F]
+  def party[F[_]]: ETeam[F] =
+    Characters.team("cloud2", "barret").effect[F]
 
   def runAllRoundsState[F[_]: Log: Interact: Random](
     repetitions: Int,
-    enemies: Effect[F, Team])
+    enemies: ETeam[F])
   : StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] =
     StateT.stateTMonadState[RoundState, ({type λ[α] = Effect[F, α]})#λ]
       .iterateUntil(runRoundState[F](enemies)) { rs ⇒
       rs.rounds >= repetitions || rs.heroes.alive.isEmpty
     }
 
-  def runRoundState[F[_]: Log: Interact: Random](enemies: Effect[F, Team])
+  def runRoundState[F[_]: Log: Interact: Random](enemies: ETeam[F])
   : StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] =
-    StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState](rs ⇒ for {
-      es ← enemies
-      f  ← runRound(BattleField.init(rs.heroes, es))
-    } yield {
-        val team = if (f.enemies.isHero) f.enemies else f.heroes
-        RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
-      })
+    StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] { rs ⇒
+      enemies.flatMap { esVal ⇒
+        esVal.fold(
+          fail = errors ⇒ errors.traverse_[({type λ[α] = Effect[F, α]})#λ](s ⇒ Effect.warn[F](s)) as rs.squared,
+          succ = { es ⇒
+          runRound(BattleField.init(rs.heroes, es)).map { f =>
+            val team = if (f.enemies.isHero) f.enemies else f.heroes
+            RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
+          }
+        })
+      }
+    }
 
   def runRound[F[_]: Log: Interact: Random](field: BattleField): Effect[F, BattleField] =
     program(field)

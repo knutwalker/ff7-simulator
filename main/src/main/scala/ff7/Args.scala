@@ -31,7 +31,7 @@ object Args {
   def parse[F[_] : Random](args: List[String]): IO[Config[F]] =
     Options.parse(args)
 
-  case class Config[F[_]](ui: UI, enemies: Effect[F, Team], repetitions: Int)
+  case class Config[F[_]](ui: UI, enemies: Effect[F, Val[Team]], repetitions: Int)
 
   case class Options(ui: Option[String], repetitions: Int, monsters: List[(String, Int)])
   object Options {
@@ -68,34 +68,37 @@ object Args {
       }
     }
 
-    def defaultEnemies[F[_]: Random] =
-      Encounters.midgar1.traverse[({type λ[α] = Effect[F, α]})#λ, NonEmptyList[String], Team] { es ⇒
-        for {
-          e ← Effect.oneOfL(es)
-          g ← Effect.oneOfL(e.groups)
-        } yield g.monsters
-      }.flatMap(_.toEffect[F])
+    def defaultEnemies[F[_]: Random]: Effect[F, Val[Team]] =
+      Encounters.midgar1
+        .traverse[({type λ[α] = Effect[F, α]})#λ, NonEmptyList[String], Team] { es ⇒
+          for {
+            e ← Effect.oneOfL(es)
+            g ← Effect.oneOfL(e.groups)
+          } yield g.monsters
+        }
 
     def parse[F[_]: Random](args: List[String]): IO[Config[F]] = IO {
       parser.parse(args, empty).fold(sys.exit(-1)) { o ⇒
-        val team = o.monsters.toNel match {
+        val team: Effect[F, Val[Team]] = o.monsters.toNel match {
           case Some(monsterConfigs) ⇒
-            monsterConfigs.traverse1[Val, NonEmptyList[Monster]] { case (monsterName, count) ⇒
-              Monsters.selectDynamic(monsterName).map { monster ⇒
-                if (count > 1) {
-                  Iterator.from(0)
-                    .map(o => 'A' + o)
-                    .map(_.toChar)
-                    .take(count)
-                    .map(suffix ⇒ monster.copy(name = s"${monster.name} $suffix"))
-                    .toList.toNel.get
-                } else {
-                  NonEmptyList(monster)
+            val monsterss = monsterConfigs.traverse1[Val, NonEmptyList[Monster]] {
+              case (monsterName, count) ⇒
+                Monsters.selectDynamic(monsterName).map { monster ⇒
+                  if (count > 1) {
+                    Iterator.from(0)
+                      .map(o => 'A' + o)
+                      .map(_.toChar)
+                      .take(count)
+                      .map(suffix ⇒ monster.copy(name = s"${monster.name} $suffix"))
+                      .toList.toNel.get
+                  } else {
+                    NonEmptyList(monster)
+                  }
                 }
-              }
-            }.map(_.flatMap(x ⇒ x))
-              .map(ms => Team(ms.head, ms.tail, None))
-              .toEffect[F]
+            }
+            val monsters = monsterss.map(_.flatMap(x ⇒ x))
+            val teams = monsters.map(ms ⇒ Team(ms.head, ms.tail, None))
+            teams.effect[F]
           case None ⇒ defaultEnemies[F]
         }
         val ui = o.ui collect {

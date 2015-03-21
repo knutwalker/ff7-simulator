@@ -132,6 +132,6 @@ package reactor1 {
       }
 
     def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
-      Effect.fail("setup routine did not run")
+      BattleAttack.none.effect
   }
 }

@@ -235,7 +235,7 @@ object ConfigReader {
 
   implicit val ai: ConfigReader[AI] = new ConfigReader[AI] {
     def read(v: ConfigValue): Val[AI] = {
-      AiLoader(get(v)).nel
+      AiLoader(get(v)).validation.toValidationNel
     }
   }
 

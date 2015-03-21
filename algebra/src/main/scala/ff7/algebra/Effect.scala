@@ -76,10 +76,6 @@ object Effect {
   def point[F[_], A](a: ⇒ A): Effect[F, A] =
     apply(Free.point[({type λ[α] = Coyoneda[F, α]})#λ, A](a))
 
-  // Booooo!!!
-  def fail[F[_], A](reason: String): Effect[F, A] =
-    apply(Free.point[({type λ[α] = Coyoneda[F, α]})#λ, A](throw new RuntimeException(reason)))
-
   // Interact
 
   def showMessage[F[_]](s: String)(implicit I: Interact[F]): Effect[F, Unit] =

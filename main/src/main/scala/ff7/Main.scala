@@ -18,8 +18,7 @@ package ff7
 
 import algebra.InteractOp.ShowMessage
 import algebra._
-import battle.Team
-import ff7.Program.RoundState
+import ff7.Program.{ETeam, RoundState}
 
 import scalaz._
 import effect.{IO, SafeApp}
@@ -36,23 +35,28 @@ object Main extends SafeApp {
     _ ← o.ui.stop
   } yield ()
 
-  def runRoundsIO(repetitions: Int, ui: UI, enemies: Effect[App, Team]): IO[RoundState] = {
-    val uiDelegate: InteractOp ~> IO = ui.interpreter
+  def runRoundsIO(repetitions: Int, ui: UI, enemies: ETeam[App]): IO[Option[RoundState]] = {
+    val app: App ~> IO = appInterpreter(ui)
+    Program.runRounds[App](repetitions, enemies).runM[IO](app)
+  }
 
+  def appInterpreter(ui: UI): App ~> IO = {
     val interact: InteractOp ~> IO =
-      if (ui.logShowMessages) {
-        new (InteractOp ~> IO) {
-          def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-            case ShowMessage(s) ⇒ log.info(s).flatMap(_ ⇒ uiDelegate(fa))
-            case _ ⇒ uiDelegate(fa)
-          }
-        }
-      } else {
-        uiDelegate
-      }
+      if (ui.logShowMessages) loggingUi(ui)
+      else                    ui.interpreter
 
     val f0: F0 ~> IO = interact or log.Interpreter
-    val app: App ~> IO = random.Interpreter or f0
-    Program.runRounds[App](repetitions, enemies).runM[IO](app)
+
+    random.Interpreter or f0
+  }
+
+  def loggingUi(ui: UI): InteractOp ~> IO = {
+    val delegate = ui.interpreter
+    new (InteractOp ~> IO) {
+      def apply[A](fa: InteractOp[A]): IO[A] = fa match {
+        case ShowMessage(s) ⇒ log.info(s).flatMap(_ ⇒ delegate(fa))
+        case _              ⇒ delegate(fa)
+      }
+    }
   }
 }

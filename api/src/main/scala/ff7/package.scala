@@ -38,17 +38,6 @@ package object ff7 {
   private[ff7] def TryVN[A](f: ⇒ A): Val[A] =
     TryE(f).validation.toValidationNel
 
-  implicit final class DisjunctionOps[E, A](val e: E \/ A) extends AnyVal {
-    def nel: ValidationNel[E, A] = e.validation.toValidationNel
-  }
-
-  implicit final class ValidationOps[E, A](val v: NonEmptyList[E] \?/ A) extends AnyVal {
-    def toEffect[F[_]]: Effect[F, A] = v match {
-      case Success(x) ⇒ Effect.point(x)
-      case Failure(es) ⇒ Effect.fail(es.list.mkString("\n", "\n", "\n"))
-    }
-  }
-
   implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
     def toTeam: Team = Team(ps.head, ps.tail, None)
   }
