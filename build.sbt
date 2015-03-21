@@ -33,6 +33,9 @@ lazy val deps = new {
     "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
+  val main = List(
+    "com.github.scopt"            %% "scopt"                      % scopt      )
+
   val gui = List(
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "org.scalafx"                 %% "scalafx"                    % scalafx    ,
@@ -44,12 +47,15 @@ lazy val deps = new {
     "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "jline"                        % "jline"                      % jline      )
 
-  val main = List(
+  val random = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.nicta"                   %% "rng"                        % rng
       exclude("org.scalaz", "scalaz-effect_2.11")
-      exclude("org.scalaz", "scalaz-core_2.11")                                ,
+      exclude("org.scalaz", "scalaz-core_2.11")                                )
+
+  val log = List(
+    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
     "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
-    "com.github.scopt"            %% "scopt"                      % scopt      ,
     "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
     "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
     "org.apache.logging.log4j"     % "log4j-slf4j-impl"           % log4j      )
@@ -81,18 +87,6 @@ lazy val playables = project
   .settings(libraryDependencies ++= deps.playables)
   .dependsOn(api)
 
-lazy val gui = project
-  .settings(name := "ff7-gui")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.gui)
-  .dependsOn(algebra)
-
-lazy val tui = project
-  .settings(name := "ff7-tui")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.tui)
-  .dependsOn(algebra)
-
 lazy val core = project
   .configs(RunDebug, RunProfile)
   .settings(debugSettings ++ profileSettings: _*)
@@ -100,13 +94,37 @@ lazy val core = project
   .settings(ff7Settings: _*)
   .dependsOn(playables)
 
+lazy val gui = project.in(file("interpreters") / "gui")
+  .settings(name := "ff7-interpreter-gui")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.gui)
+  .dependsOn(algebra)
+
+lazy val tui = project.in(file("interpreters") / "tui")
+  .settings(name := "ff7-interpreter-tui")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.tui)
+  .dependsOn(algebra)
+
+lazy val random = project.in(file("interpreters") / "random")
+  .settings(name := "ff7-interpreter-random")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.random)
+  .dependsOn(algebra)
+
+lazy val log = project.in(file("interpreters") / "log")
+  .settings(name := "ff7-interpreter-log")
+  .settings(ff7Settings: _*)
+  .settings(libraryDependencies ++= deps.log)
+  .dependsOn(algebra)
+
 lazy val main = project
   .configs(RunDebug, RunProfile)
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7")
   .settings(ff7Settings: _*)
   .settings(libraryDependencies ++= deps.main)
-  .dependsOn(core, gui, tui)
+  .dependsOn(core, gui, tui, random, log)
 
 lazy val tests = project
   .settings(name := "ff7-tests")
@@ -125,8 +143,8 @@ lazy val parent = project.in(file("."))
   .settings(debugSettings ++ profileSettings: _*)
   .settings(name := "ff7-parent")
   .settings(ff7Settings: _*)
-  .dependsOn(algebra, api, core, gui, main, playables, tests, tui)
-  .aggregate(algebra, api, core, dist, gui, main, playables, tests, tui)
+  .dependsOn(algebra, api, core, gui, log, main, playables, random, tests, tui)
+  .aggregate(algebra, api, core, dist, gui, log, main, playables, random, tests, tui)
   .settings(
     aggregate in dependencySvgView := false,
     aggregate in          assembly := false
