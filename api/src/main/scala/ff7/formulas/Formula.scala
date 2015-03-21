@@ -18,7 +18,7 @@ package ff7
 package formulas
 
 import algebra.{Effect, Random}
-import battle.{Hit, Target, Attacker}
+import battle.{Attacker, Hit, Target}
 
 trait Formula {
   def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit]

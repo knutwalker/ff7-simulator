@@ -17,12 +17,13 @@
 package ff7
 package monsters
 
-import algebra._
 import algebra.Effect.point
+import algebra._
 import battle._
 import stats._
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
 
 final case class Monster(
   name: String,

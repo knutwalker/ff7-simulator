@@ -19,8 +19,8 @@ package monsters
 package midgar1
 
 import algebra._
-import battle.{Team, MonsterAttack, BattleAttack}
-import stats.{Power, AttackPercent, MP}
+import battle.{BattleAttack, MonsterAttack, Team}
+import stats.{AttackPercent, MP, Power}
 
 import scalaz._
 import Scalaz._

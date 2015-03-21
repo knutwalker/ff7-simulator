@@ -17,7 +17,8 @@
 package ff7
 package gui
 
-import algebra._, InteractOp._
+import algebra._
+import InteractOp._
 
 import scalaz._
 import effect.IO

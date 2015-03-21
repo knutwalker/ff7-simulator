@@ -16,9 +16,11 @@
 
 package ff7
 
-import algebra._, InteractOp._
+import algebra._
+import InteractOp._
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
 import effect.IO
 
 import jline.console.ConsoleReader

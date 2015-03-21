@@ -17,7 +17,7 @@
 package ff7
 package algebra
 
-import scalaz.{NonEmptyList, Inject}
+import scalaz.{Inject, NonEmptyList}
 
 sealed trait RandomOp[A]
 

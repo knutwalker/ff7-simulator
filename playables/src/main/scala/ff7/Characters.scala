@@ -19,7 +19,8 @@ package ff7
 import battle.Team
 import characters.Character
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
 
 object Characters extends ConfigLoader[Character]("ff7.characters", "Character") {
 

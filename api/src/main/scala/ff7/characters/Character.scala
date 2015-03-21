@@ -17,9 +17,9 @@
 package ff7
 package characters
 
-import algebra.Input.Special
-import algebra.{Effect, Random, Interact, TeamId, UiItem, Input}
 import algebra.Effect._
+import algebra.Input.Special
+import algebra.{Effect, Input, Interact, Random, TeamId, UiItem}
 import battle._
 import stats._
 

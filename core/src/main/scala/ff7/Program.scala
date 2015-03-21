@@ -16,7 +16,8 @@
 
 package ff7
 
-import algebra._, Effect._
+import algebra._
+import Effect._
 import battle.{BattleField, Team}
 
 import scalaz._

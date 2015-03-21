@@ -16,19 +16,20 @@
 
 package ff7
 
-import battle.{Team, Encounter}
-import characters.{Armour, Weapon, Character}
+import battle.{Encounter, Team}
+import characters.{Armour, Character, Weapon}
 import monsters.{AI, AiLoader, Monster}
 import stats._
 
-import scalaz._, Scalaz._
+import scalaz._
 import Maybe._
+import Scalaz._
 
-import com.typesafe.config.{ConfigValueType, ConfigList, ConfigObject, ConfigValue}
+import com.typesafe.config.{ConfigList, ConfigObject, ConfigValue, ConfigValueType}
 import spire.math.Rational
 
+import Predef._
 import collection.JavaConverters._
-import Predef.{augmentString, genericWrapArray}
 
 trait ConfigReader[A] {
   def read(v: ConfigValue): Val[A]

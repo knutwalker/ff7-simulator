@@ -16,7 +16,9 @@
 
 package ff7.algebra
 
-import scalaz._, Free._, Leibniz._
+import scalaz._
+import Free._
+import Leibniz._
 
 sealed trait Effect[F[_], A] {
 

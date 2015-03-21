@@ -16,7 +16,8 @@
 
 package ff7
 
-import scalaz._, Free._
+import scalaz._
+import Free._
 
 package object algebra {
 

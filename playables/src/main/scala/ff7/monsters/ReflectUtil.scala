@@ -17,7 +17,9 @@
 package ff7
 package monsters
 
-import scalaz._, Scalaz._
+import scalaz._
+import Scalaz._
+
 import scala.reflect.runtime.{universe ⇒ ru}
 
 object ReflectUtil {

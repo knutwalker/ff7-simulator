@@ -16,7 +16,8 @@
 
 package ff7
 
-import algebra.{Random, Effect, Interact, Input}, Effect.point
+import algebra.{Effect, Input, Interact, Random}
+import Effect.point
 import battle._
 import monsters._
 

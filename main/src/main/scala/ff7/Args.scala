@@ -24,7 +24,7 @@ import scalaz._
 import Scalaz._
 import effect._
 
-import scala.Predef._
+import scala.collection.immutable.Map
 
 object Args {
 

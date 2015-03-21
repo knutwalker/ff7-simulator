@@ -17,7 +17,8 @@
 import ff7.algebra.Effect
 import ff7.battle.{Person, Team}
 
-import scalaz._, Validation._
+import scalaz._
+import Validation._
 
 package object ff7 {
 

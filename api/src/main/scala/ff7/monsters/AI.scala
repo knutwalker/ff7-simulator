@@ -18,7 +18,7 @@ package ff7
 package monsters
 
 import algebra.{Effect, Random}
-import battle.{Team, BattleAttack}
+import battle.{BattleAttack, Team}
 
 trait AI extends {
   def setup[F[_]: Random](self: Monster): Effect[F, Monster]

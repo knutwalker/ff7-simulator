@@ -17,7 +17,7 @@
 package ff7
 package characters
 
-import battle.{Person, Target, Attacker, MonsterAttack}
+import battle.{Attacker, MonsterAttack, Person, Target}
 import stats._
 
 final case class CharacterAttacks(
