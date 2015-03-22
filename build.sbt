@@ -75,91 +75,77 @@ lazy val deps = new {
     .map(_ % "test")
 }
 
-lazy val algebra = project
-  .settings(name := "ff7-algebra")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.algebra)
+lazy val algebra = project settings (
+  ff7Settings,
+  name := "ff7-algebra",
+  libraryDependencies ++= deps.algebra)
 
-lazy val api = project
-  .settings(name := "ff7-api")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.api)
-  .dependsOn(algebra)
+lazy val api = project dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-api",
+  libraryDependencies ++= deps.api)
 
-lazy val items = project
-  .settings(name := "ff7-items")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.items)
-  .dependsOn(api)
+lazy val items = project dependsOn api settings (
+  ff7Settings,
+  name := "ff7-items",
+  libraryDependencies ++= deps.items)
 
-lazy val core = project
-  .configs(RunDebug, RunProfile)
-  .settings(debugSettings ++ profileSettings: _*)
-  .settings(name := "ff7-core")
-  .settings(ff7Settings: _*)
-  .dependsOn(items)
+lazy val core = project dependsOn items configs (RunDebug, RunProfile) settings (
+  debugSettings,
+  profileSettings,
+  ff7Settings,
+  name := "ff7-core")
 
-lazy val tui = project.in(file("interpreters") / "tui")
-  .settings(name := "ff7-interpreter-tui")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.tui)
-  .dependsOn(algebra)
+lazy val tui = project in file("interpreters") / "tui" dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-interpreter-tui",
+  libraryDependencies ++= deps.tui)
 
-lazy val swing = project.in(file("interpreters") / "swing")
-  .settings(name := "ff7-interpreter-swing")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.swing)
-  .dependsOn(algebra)
+lazy val swing = project in file("interpreters") / "swing" dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-interpreter-swing",
+  libraryDependencies ++= deps.swing)
 
-lazy val sfx = project.in(file("interpreters") / "sfx")
-  .settings(name := "ff7-interpreter-scala-fx")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.sfx)
-  .dependsOn(algebra)
+lazy val sfx = project in file("interpreters") / "sfx" dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-interpreter-scala-fx",
+  libraryDependencies ++= deps.sfx)
 
-lazy val random = project.in(file("interpreters") / "random")
-  .settings(name := "ff7-interpreter-random")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.random)
-  .dependsOn(algebra)
+lazy val random = project in file("interpreters") / "random" dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-interpreter-random",
+  libraryDependencies ++= deps.random)
 
-lazy val log = project.in(file("interpreters") / "log")
-  .settings(name := "ff7-interpreter-log")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.log)
-  .dependsOn(algebra)
+lazy val log = project in file("interpreters") / "log" dependsOn algebra settings (
+  ff7Settings,
+  name := "ff7-interpreter-log",
+  libraryDependencies ++= deps.log)
 
-lazy val main = project
-  .configs(RunDebug, RunProfile)
-  .settings(debugSettings ++ profileSettings: _*)
-  .settings(name := "ff7")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.main)
-  .dependsOn(core, tui, swing, sfx, random, log)
+lazy val main = project dependsOn (core, tui, swing, sfx, random, log) configs (RunDebug, RunProfile) settings (
+  debugSettings,
+  profileSettings,
+  ff7Settings,
+  name := "ff7",
+  libraryDependencies ++= deps.main)
 
-lazy val tests = project
-  .settings(name := "ff7-tests")
-  .settings(ff7Settings: _*)
-  .settings(libraryDependencies ++= deps.tests)
-  .dependsOn(core)
+lazy val tests = project dependsOn core settings(
+  ff7Settings,
+  name := "ff7-tests",
+  libraryDependencies ++= deps.tests)
 
-lazy val dist = project
-  .settings(
-    resourceDirectory <<= baseDirectory { _ / "scripts" },
-               target <<= baseDirectory { _ / "app" }
-  )
+lazy val dist = project settings (
+  resourceDirectory <<= baseDirectory { _ / "scripts" },
+             target <<= baseDirectory { _ / "app" })
 
-lazy val parent = project.in(file("."))
-  .configs(RunDebug, RunProfile)
-  .settings(debugSettings ++ profileSettings: _*)
-  .settings(name := "ff7-parent")
-  .settings(ff7Settings: _*)
-  .dependsOn(algebra, api, core, items, log, main, random, sfx, swing, tests, tui)
-  .aggregate(algebra, api, core, dist, items, log, main, random, sfx, swing, tests, tui)
-  .settings(
-    aggregate in dependencySvgView := false,
-    aggregate in          assembly := false
-  )
+lazy val parent = project in file(".") dependsOn (algebra, api, core, items, log, main, random, sfx, swing, tests, tui) configs (
+  RunDebug, RunProfile) aggregate (
+  algebra, api, core, dist, items, log, main, random, sfx, swing, tests, tui) settings (
+  debugSettings,
+  profileSettings,
+  ff7Settings,
+  name := "ff7-parent",
+  aggregate in dependencySvgView := false,
+  aggregate in          assembly := false)
 
 // =================================
 
