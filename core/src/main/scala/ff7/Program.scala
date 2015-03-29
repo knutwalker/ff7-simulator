@@ -18,69 +18,73 @@ package ff7
 
 import algebra._
 import Effect._
-import battle.{BattleField, Team}
+import battle.BattleField
 
 import scalaz._
 import Scalaz._
 
 
-object Program {
+class Program[F[_]: Log: Interact: Random] {
+  import Program.{RoundState, RoundsConfig}
 
-  type ETeam[F[_]] = Effect[F, Val[Team]]
+  type X[A] = Effect[F, A]
+  type M[A] = StateT[X, RoundState, A]
+  type Team = X[Val[battle.Team]]
 
-  def runRounds[F[_]: Log: Interact: Random](
-    repetitions: Int,
-    enemies: ETeam[F])
-  : Effect[F, Option[RoundState]] = {
-    party.flatMap { pVal ⇒
-      pVal.fold(
-        fail = errors ⇒ errors.traverse_[({type λ[α] = Effect[F, α]})#λ](s ⇒ Effect.warn[F](s)) as none,
-        succ = { p ⇒
-          runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0)).flatMap { rs ⇒
-            info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.") as rs.some
-          }
-        }
-      )
-    }
-  }
-
-  def party[F[_]]: ETeam[F] =
+  val party: Team =
     Characters.team("cloud2", "barret").effect[F]
 
-  def runAllRoundsState[F[_]: Log: Interact: Random](
-    repetitions: Int,
-    enemies: ETeam[F])
-  : StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] =
-    StateT.stateTMonadState[RoundState, ({type λ[α] = Effect[F, α]})#λ]
-      .iterateUntil(runRoundState[F](enemies)) { rs ⇒
+  val state: StateT[X, RoundsConfig[F], Option[RoundState]] =
+    StateT[X, RoundsConfig[F], Option[RoundState]](cfg ⇒ runRounds(cfg.repetitions, cfg.enemies)
+      .map(rs ⇒ (cfg, rs)))
+
+  def runRounds(repetitions: Int,enemies: Team): Effect[F, Option[RoundState]] = party.flatMap { pVal ⇒
+    pVal.fold(
+      fail = errors ⇒ errors.traverse_[X](Effect.warn[F]) as none,
+      succ = { p ⇒
+        runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0)).flatMap { rs ⇒
+          info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.") as rs.some
+        }
+      }
+    )
+  }
+
+  def runAllRoundsState(repetitions: Int, enemies: Team): StateT[X, RoundState, RoundState] =
+    Monad[M].iterateUntil(runRoundState(enemies)) { rs ⇒
       rs.rounds >= repetitions || rs.heroes.alive.isEmpty
     }
 
-  def runRoundState[F[_]: Log: Interact: Random](enemies: ETeam[F])
-  : StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] =
-    StateT[({type λ[α] = Effect[F, α]})#λ, RoundState, RoundState] { rs ⇒
-      enemies.flatMap { esVal ⇒
-        esVal.fold(
-          fail = errors ⇒ errors.traverse_[({type λ[α] = Effect[F, α]})#λ](s ⇒ Effect.warn[F](s)) as rs.squared,
-          succ = { es ⇒
-          runRound(BattleField.init(rs.heroes, es)).map { f =>
-            val team = if (f.enemies.isHero) f.enemies else f.heroes
-            RoundState(team, rs.rounds + 1, rs.turns + f.history.size).squared
-          }
-        })
-      }
+  def runRoundState(enemies: Team): StateT[X, RoundState, RoundState] =
+    StateT[X, RoundState, RoundState](rs ⇒ runRound(enemies)(rs).map(_.squared))
+
+  def runRound(enemies: Team)(rs: RoundState): Effect[F, RoundState] =
+    enemies.flatMap { esVal ⇒
+      esVal.fold(
+        fail = errors ⇒ errors.traverse_[X](Effect.warn[F]) as rs,
+        succ = { es ⇒
+          program(BattleField.init(rs.heroes, es)).map { f =>
+          val team = if (f.enemies.isHero) f.enemies else f.heroes
+          RoundState(team, rs.rounds + 1, rs.turns + f.history.size)
+        }
+      })
     }
 
-  def runRound[F[_]: Log: Interact: Random](field: BattleField): Effect[F, BattleField] =
-    program(field)
-
-  def program[F[_]: Log: Interact: Random](field: BattleField): Effect[F, BattleField] = for {
+  def program(field: BattleField): Effect[F, BattleField] = for {
     _      ← debug("Starting simulation")
     _      ← showMessage(s"Starting a new round with $field")
     result ← Simulation(field)
     _      ← showMessage(s"Finished round after ${result.history.size} turns")
     _      ← debug("Simulation finished")
   } yield result
+}
 
-  case class RoundState(heroes: Team, rounds: Int, turns: Int)
+object Program {
+
+  type Team[F[_]] = Effect[F, Val[battle.Team]]
+
+  case class RoundsConfig[F[_]](repetitions: Int, enemies: Team[F])
+  case class RoundState(heroes: battle.Team, rounds: Int, turns: Int)
+
+  def runRounds[F[_]: Log: Interact: Random](repetitions: Int, enemies: Team[F]): Effect[F, Option[RoundState]] =
+    new Program[F].state.eval(RoundsConfig[F](repetitions, enemies))
 }

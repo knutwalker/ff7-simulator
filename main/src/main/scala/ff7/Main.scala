@@ -18,7 +18,7 @@ package ff7
 
 import algebra.InteractOp.ShowMessage
 import algebra._
-import ff7.Program.{ETeam, RoundState}
+import ff7.Program.{Team, RoundState}
 
 import scalaz._
 import effect.{IO, SafeApp}
@@ -35,7 +35,7 @@ object Main extends SafeApp {
     _ ← o.ui.stop
   } yield ()
 
-  def runRoundsIO(repetitions: Int, ui: UI, enemies: ETeam[App]): IO[Option[RoundState]] = {
+  def runRoundsIO(repetitions: Int, ui: UI, enemies: Team[App]): IO[Option[RoundState]] = {
     val app: App ~> IO = appInterpreter(ui)
     Program.runRounds[App](repetitions, enemies).runM[IO](app)
   }
