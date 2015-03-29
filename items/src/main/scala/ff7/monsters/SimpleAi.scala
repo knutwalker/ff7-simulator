@@ -20,28 +20,30 @@ package monsters
 import algebra._
 import battle.{BattleAttack, MonsterAttack, Person, Team}
 
-trait SimpleAi extends AI {
+trait SimpleAi extends AI with NoSetup {
   def attack[F[_] : Random]: Effect[F, MonsterAttack]
 
-  def attack[F[_] : Random](self: Monster): Effect[F, MonsterAttack] =
-    attack
+  def target[F[_] : Random](targets: Team): Effect[F, Person]
 
-  def target[F[_] : Random](targets: Team): Effect[F, Person] =
-    Effect.oneOfL(targets.toNel)
-
-  def modify(self: Monster): Monster =
-    self
+  def modify(self: Monster): Monster
 
   final def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] = {
     val tar = target(targets)
-    val att = attack(self)
+    val att = attack
     val mon = modify(self)
     tar.flatMap(t ⇒ att.map(a ⇒ mon.attacks(t, a)))
   }
 
-  def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
-    Effect.point(self)
-
   implicit protected def liftInteract[F[_], A](a: A): Effect[F, A] =
     Effect.point(a)
+}
+
+trait RandomTarget { self: SimpleAi ⇒
+  def target[F[_] : Random](targets: Team): Effect[F, Person] =
+    Effect.oneOfL(targets.toNel)
+}
+
+trait StatelessAi { self: SimpleAi ⇒
+  def modify(self: Monster): Monster =
+    self
 }

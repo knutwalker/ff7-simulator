@@ -24,3 +24,12 @@ trait AI extends {
   def setup[F[_]: Random](self: Monster): Effect[F, Monster]
   def apply[F[_]: Random](self: Monster, targets: Team): Effect[F, BattleAttack]
 }
+
+trait NoSetup { self: AI ⇒
+  def setup[F[_] : Random](self: Monster): Effect[F, Monster] = self.effect
+}
+
+trait Setup { self: Ai ⇒
+  def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
+    BattleAttack.none.effect
+}

@@ -30,7 +30,7 @@ import shapeless.contrib.scalaz._
 package reactor1 {
   import Attacks._
 
-  object Mp extends SimpleAi {
+  object Mp extends SimpleAi with RandomTarget with StatelessAi {
     def attack[F[_] : Random]: Effect[F, MonsterAttack] =
       if (true) // if (heroes.rowPosition(self) == FrontRow)
         Effect.choose(1, 2, tonfa, machineGun)
@@ -38,18 +38,15 @@ package reactor1 {
         Effect.choose(1, 6, tonfa, machineGun)
   }
 
-  object GuardHound extends SimpleAi {
+  object GuardHound extends SimpleAi with StatelessAi {
     def attack[F[_] : Random]: Effect[F, MonsterAttack] =
       Effect.choose(1, 3, tentacle, bite)
 
-   override def target[F[_] : Random](targets: Team): Effect[F, Person] =
+   def target[F[_] : Random](targets: Team): Effect[F, Person] =
       targets.toNel.minimumBy1(_.hp)
   }
 
-  object MonoDrive extends AI {
-
-    def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
-      Effect.point(self)
+  object MonoDrive extends AI with NoSetup {
 
     def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
       Effect.chance(1, 3).map { roll ⇒
@@ -67,7 +64,7 @@ package reactor1 {
       }
   }
 
-  object Grunt extends SimpleAi {
+  object Grunt extends SimpleAi with RandomTarget with StatelessAi {
     def attack[F[_] : Random]: Effect[F, MonsterAttack] = if (true) { // if (heroes.rowPosition(self) == FrontRow)
       Effect.choose(1, 2, beamGun, handClaw)
     } else {
@@ -75,9 +72,9 @@ package reactor1 {
     }
   }
 
-  object FirstRay extends SimpleAi {
+  object FirstRay extends SimpleAi with StatelessAi {
     private val count = 0
-    override def target[F[_] : Random](targets: Team): Effect[F, Person] = {
+    def target[F[_] : Random](targets: Team): Effect[F, Person] = {
       if (count == 0) {
         targets.toNel.maximumBy1(_.hp)
       } else {
@@ -89,35 +86,32 @@ package reactor1 {
       laserCannon
   }
 
-  object Sweeper extends AI {
+  object Sweeper extends AI with Setup {
 
-    lazy val state1: AI = new SimpleAi {
+    lazy val state1: AI = new SimpleAi with RandomTarget {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = smokeShot
-      override def modify(self: Monster): Monster = self.copy(ai = state2)
+      def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
     lazy val state2: AI = new SimpleAi {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = machineGun
-      override def target[F[_] : Random](targets: Team): Effect[F, Person] =
+      def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)
-      override def modify(self: Monster): Monster = self.copy(ai = state3)
+      def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
     lazy val state3: AI = new SimpleAi {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = doubleMachineGun
-      override def target[F[_] : Random](targets: Team): Effect[F, Person] =
+      def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)
-      override def modify(self: Monster): Monster = self.copy(ai = state1)
+      def modify(self: Monster): Monster = self.copy(ai = state1)
     }
 
-    override def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
+    def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
       Effect.chooseInt(0, 3).map {
         case 0 ⇒ self.copy(ai = state1)
         case 1 ⇒ self.copy(ai = state2)
         case _ ⇒ self.copy(ai = state3)
       }
-
-    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
-      BattleAttack.none.effect
   }
 }
