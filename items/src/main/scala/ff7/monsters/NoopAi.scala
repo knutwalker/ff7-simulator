@@ -20,7 +20,7 @@ package monsters
 import algebra.{Effect, Random}
 import battle.{BattleAttack, Team}
 
-object NoopAi extends AI {
+object NoopAi extends Ai {
 
   def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
     Effect.point(self)

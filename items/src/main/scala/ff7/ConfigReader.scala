@@ -18,7 +18,7 @@ package ff7
 
 import battle.{Encounter, Team}
 import characters.{Armour, Character, Weapon}
-import monsters.{AI, AiLoader, Monster}
+import monsters.{Ai, AiLoader, Monster}
 import stats._
 
 import scalaz._
@@ -204,10 +204,10 @@ object ConfigReader {
         val magicAttack = v.nel[Int]("magicattack")
         val magicDefense = v.nel[Int]("magicdefense")
         val xp = v.nel[Int]("xp")
-        val ai = v.nel[AI]("ai")
+        val ai = v.nel[Ai]("ai")
 
         val make = (name |@| level |@| hp |@| mp |@| dexterity |@| luck |@| attack |@| defense |@| defensePercent |@| magicAttack |@| magicDefense |@| xp) {
-          (n, l, hp, mp, x, c, a, d, dp, ma, md, xp) ⇒ (ai: AI) ⇒
+          (n, l, hp, mp, x, c, a, d, dp, ma, md, xp) ⇒ (ai: Ai) ⇒
             Monster(
               n,
               Level(l),
@@ -233,8 +233,8 @@ object ConfigReader {
     }
   }
 
-  implicit val ai: ConfigReader[AI] = new ConfigReader[AI] {
-    def read(v: ConfigValue): Val[AI] = {
+  implicit val ai: ConfigReader[Ai] = new ConfigReader[Ai] {
+    def read(v: ConfigValue): Val[Ai] = {
       AiLoader(get(v)).validation.toValidationNel
     }
   }

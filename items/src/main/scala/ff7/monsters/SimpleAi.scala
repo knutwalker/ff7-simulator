@@ -20,7 +20,7 @@ package monsters
 import algebra._
 import battle.{BattleAttack, MonsterAttack, Person, Team}
 
-trait SimpleAi extends AI with NoSetup {
+trait SimpleAi extends Ai with NoSetup {
   def attack[F[_] : Random]: Effect[F, MonsterAttack]
 
   def target[F[_] : Random](targets: Team): Effect[F, Person]

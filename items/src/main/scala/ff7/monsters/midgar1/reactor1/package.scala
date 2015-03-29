@@ -46,7 +46,7 @@ package reactor1 {
       targets.toNel.minimumBy1(_.hp)
   }
 
-  object MonoDrive extends AI with NoSetup {
+  object MonoDrive extends Ai with NoSetup {
 
     def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
       Effect.chance(1, 3).map { roll ⇒
@@ -86,21 +86,21 @@ package reactor1 {
       laserCannon
   }
 
-  object Sweeper extends AI with Setup {
+  object Sweeper extends Ai with Setup {
 
-    lazy val state1: AI = new SimpleAi with RandomTarget {
+    lazy val state1: Ai = new SimpleAi with RandomTarget {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = smokeShot
       def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
-    lazy val state2: AI = new SimpleAi {
+    lazy val state2: Ai = new SimpleAi {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = machineGun
       def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)
       def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
-    lazy val state3: AI = new SimpleAi {
+    lazy val state3: Ai = new SimpleAi {
       def attack[F[_] : Random]: Effect[F, MonsterAttack] = doubleMachineGun
       def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)

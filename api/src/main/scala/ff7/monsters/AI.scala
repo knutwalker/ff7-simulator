@@ -20,12 +20,12 @@ package monsters
 import algebra.{Effect, Random}
 import battle.{BattleAttack, Team}
 
-trait AI extends {
+trait Ai extends {
   def setup[F[_]: Random](self: Monster): Effect[F, Monster]
   def apply[F[_]: Random](self: Monster, targets: Team): Effect[F, BattleAttack]
 }
 
-trait NoSetup { self: AI ⇒
+trait NoSetup { self: Ai ⇒
   def setup[F[_] : Random](self: Monster): Effect[F, Monster] = self.effect
 }
 

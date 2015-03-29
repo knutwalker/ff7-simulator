@@ -22,5 +22,5 @@ import monsters.ReflectUtil._
 import scalaz.\/
 
 object AiLoader {
-  def apply(name: String): String \/ AI = loadObject[AI](name)
+  def apply(name: String): String \/ Ai = loadObject[Ai](name)
 }
