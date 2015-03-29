@@ -72,18 +72,20 @@ package reactor1 {
     }
   }
 
-  object FirstRay extends SimpleAi with StatelessAi {
-    private val count = 0
-    def target[F[_] : Random](targets: Team): Effect[F, Person] = {
+  class FirstRay(count: Int) extends Ai with NoSetup {
+    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] = {
       if (count == 0) {
-        targets.toNel.maximumBy1(_.hp)
+        val tar = targets.toNel.maximumBy1(_.hp)
+        val att = laserCannon
+        self.copy(ai = new FirstRay(1)).attacks(tar, att).effect
       } else {
-        // TODO: no attack
-        targets.toNel.maximumBy1(_.hp)
+        BattleAttack.change(self.copy(ai = new FirstRay(0))).effect
       }
     }
-    def attack[F[_] : Random]: Effect[F, MonsterAttack] =
-      laserCannon
+  }
+  object FirstRay extends Ai with Setup {
+    def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
+      self.copy(ai = new FirstRay(0)).effect
   }
 
   object Sweeper extends Ai with Setup {
