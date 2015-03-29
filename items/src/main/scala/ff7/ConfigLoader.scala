@@ -38,7 +38,8 @@ abstract class ConfigLoader[A](configPath: String, entityName: String)(implicit 
     loaded.flatMap(_.getOrElse(name,
       s"[$name] was not a configured $entityName".failureNel))
 
-  final def available = loaded.map(_.keySet).getOrElse(Set.empty)
+  final def available: Set[String] =
+    loaded.map(_.keySet).getOrElse(Set.empty)
 }
 object ConfigLoader {
   private val config = ConfigFactory.load()

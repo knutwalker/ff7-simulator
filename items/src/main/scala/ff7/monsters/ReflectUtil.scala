@@ -48,12 +48,8 @@ object ReflectUtil {
   }
 
   private def loadClass(name: String): String \/ Class[_] =
-    try {
-      loader.loadClass(name).right
-    } catch {
-      case e: ClassNotFoundException ⇒
-        s"The class [$name] could not be found".left
-    }
+    \/.fromTryCatchNonFatal(loader.loadClass(name))
+      .leftMap(_ ⇒ s"The class [$name] could not be found")
 
   private def objectSymbol(clazz: Class[_]): String \/ ru.ModuleSymbol =
     TryE(m.moduleSymbol(clazz))
