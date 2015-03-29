@@ -51,6 +51,7 @@ final class Turn[F[_]: Interact: Random] {
   def attack(attacker: Person, opponents: Team, allies: Team): Effect[F, BattleResult] = {
     attacker.chooseAttack(opponents, allies).flatMap {
       case \/-(BattleAttack.Attack(x, t)) ⇒ executeAttack(attacker, x, t)
+      case \/-(BattleAttack.Change(m))    ⇒ BattleResult.change(attacker, m).effect[F]
       case \/-(BattleAttack.None)         ⇒ BattleResult.none.effect[F]
       case \/-(BattleAttack.Abort)        ⇒ BattleResult.aborted.effect[F]
       case -\/(Input.Quit)                ⇒ BattleResult.aborted.effect[F]
