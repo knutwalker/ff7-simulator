@@ -39,6 +39,7 @@ final class Turn[F[_]: Interact: Random] {
 
   def evaluateResult(bf: BattleField, br: BattleResult): Effect[F, BattleField] = br match {
     case r@BattleResult.Attack(_,_,_,_) ⇒ evaluateAttack(bf, r)
+    case r@BattleResult.Change(_,_)     ⇒ evaluateChange(bf, r)
     case BattleResult.None              ⇒ evaluateNoAttack(bf)
     case BattleResult.Aborted           ⇒ evaluateAbort(bf)
     case BattleResult.Undo              ⇒ evaluateUndo(bf)
@@ -86,6 +87,14 @@ final class Turn[F[_]: Interact: Random] {
         s"$oa attacked $target using [${a.chosenAttack}] and hit critically with $x damage"
     }
     Effect.showMessage(msg) >| b
+  }
+
+  def evaluateChange(bf: BattleField, br: BattleResult.Change): Effect[F, BattleField] = {
+    val oa = br.originalAttacker
+    val a = br.attacker
+    val heroes = bf.heroes.updated(oa, a)
+    val b = bf.round(br).copy(heroes = bf.enemies, enemies = heroes).cycle
+    b.effect
   }
 
   def evaluateNoAttack(bf: BattleField): Effect[F, BattleField] = {

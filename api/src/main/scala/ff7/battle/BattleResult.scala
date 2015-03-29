@@ -23,11 +23,17 @@ object BattleResult {
   val aborted: BattleResult = Aborted
   val undo: BattleResult = Undo
   val none: BattleResult = None
+
+  def change(originalAttacker: Person, attacker: Person): BattleResult =
+    Change(originalAttacker, attacker)
+
   def apply(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit): BattleResult =
     Attack(originalAttacker, attacker, target, hit)
+
 
   case object Aborted extends BattleResult
   case object Undo extends BattleResult
   case object None extends BattleResult
+  final case class Change(originalAttacker: Person, attacker: Person) extends BattleResult
   final case class Attack(originalAttacker: Person, attacker: Attacker, target: Target, hit: Hit) extends BattleResult
 }
