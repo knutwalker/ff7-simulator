@@ -19,6 +19,7 @@ package monsters
 
 import algebra._
 import battle.{BattleAction, BattleAttack, Person, Team}
+import monsters.Ai.NoSetup
 
 trait SimpleAi extends Ai with NoSetup {
   def attack[F[_] : Random]: Effect[F, BattleAttack]

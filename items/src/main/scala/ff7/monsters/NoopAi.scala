@@ -17,4 +17,6 @@
 package ff7
 package monsters
 
+import monsters.Ai.{NoSetup, Setup}
+
 object NoopAi extends Ai with Setup with NoSetup

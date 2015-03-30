@@ -20,6 +20,7 @@ package midgar1
 
 import algebra._
 import battle.{BattleAction, BattleAttack, Person, Team}
+import monsters.Ai.{Setup, NoSetup}
 import stats.MP
 
 import scalaz._
