@@ -48,10 +48,10 @@ final case class Monster(
   def magicDefensePercent: MagicDefensePercent =
     MagicDefensePercent(0)
 
-  def using(a: MonsterAttack): Attacker =
+  def using(a: BattleAttack): Attacker =
     MonsterAttacks(this, a)
 
-  def attacks(p: Person, a: MonsterAttack): BattleAction =
+  def attacks(p: Person, a: BattleAttack): BattleAction =
     BattleAction(using(a), p.asTarget)
 
   val asTarget: Target = this

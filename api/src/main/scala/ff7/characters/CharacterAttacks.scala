@@ -17,12 +17,12 @@
 package ff7
 package characters
 
-import battle.{Attacker, MonsterAttack, Person, Target}
+import battle.{Attacker, BattleAttack, Person, Target}
 import stats._
 
 final case class CharacterAttacks(
   character: Character,
-  chosenAttack: MonsterAttack
+  chosenAttack: BattleAttack
   ) extends Attacker with Target {
 
   def name: String = character.name

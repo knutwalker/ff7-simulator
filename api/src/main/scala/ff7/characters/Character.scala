@@ -56,11 +56,11 @@ final case class Character(
   val asPerson: Person = this
   val isHero: Boolean = true
 
-  def physicalAttack: MonsterAttack =
-    MonsterAttack.physical("Attack", attackPercent, power)
+  def physicalAttack: BattleAttack =
+    BattleAttack.physical("Attack", attackPercent, power)
 
-  def magicalAttack: MonsterAttack =
-    MonsterAttack.magical("Fire", MP(4), MagicAttackPercent(100), Power(Rational(1, 2)))
+  def magicalAttack: BattleAttack =
+    BattleAttack.magical("Fire", MP(4), MagicAttackPercent(100), Power(Rational(1, 2)))
 
   def attackPhysical: Attacker =
     CharacterAttacks(this, physicalAttack)

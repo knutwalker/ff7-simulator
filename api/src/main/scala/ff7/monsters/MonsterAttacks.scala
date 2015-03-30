@@ -22,7 +22,7 @@ import stats._
 
 final case class MonsterAttacks(
   monster: Monster,
-  chosenAttack: MonsterAttack
+  chosenAttack: BattleAttack
   ) extends Attacker with Target {
   def name: String = monster.name
   def hp: HP = monster.hp

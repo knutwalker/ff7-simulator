@@ -19,7 +19,7 @@ package monsters
 package midgar1
 
 import algebra._
-import battle.{BattleAction, MonsterAttack, Person, Team}
+import battle.{BattleAction, BattleAttack, Person, Team}
 import stats.MP
 
 import scalaz._
@@ -31,7 +31,7 @@ package reactor1 {
   import Attacks._
 
   object Mp extends SimpleAi with RandomTarget with StatelessAi {
-    def attack[F[_] : Random]: Effect[F, MonsterAttack] =
+    def attack[F[_] : Random]: Effect[F, BattleAttack] =
       if (true) // if (heroes.rowPosition(self) == FrontRow)
         Effect.choose(1, 2, tonfa, machineGun)
       else
@@ -39,7 +39,7 @@ package reactor1 {
   }
 
   object GuardHound extends SimpleAi with StatelessAi {
-    def attack[F[_] : Random]: Effect[F, MonsterAttack] =
+    def attack[F[_] : Random]: Effect[F, BattleAttack] =
       Effect.choose(1, 3, tentacle, bite)
 
    def target[F[_] : Random](targets: Team): Effect[F, Person] =
@@ -65,7 +65,7 @@ package reactor1 {
   }
 
   object Grunt extends SimpleAi with RandomTarget with StatelessAi {
-    def attack[F[_] : Random]: Effect[F, MonsterAttack] = if (true) { // if (heroes.rowPosition(self) == FrontRow)
+    def attack[F[_] : Random]: Effect[F, BattleAttack] = if (true) { // if (heroes.rowPosition(self) == FrontRow)
       Effect.choose(1, 2, beamGun, handClaw)
     } else {
       Effect.choose(1, 12, handClaw, beamGun)
@@ -91,19 +91,19 @@ package reactor1 {
   object Sweeper extends Ai with Setup {
 
     lazy val state1: Ai = new SimpleAi with RandomTarget {
-      def attack[F[_] : Random]: Effect[F, MonsterAttack] = smokeShot
+      def attack[F[_] : Random]: Effect[F, BattleAttack] = smokeShot
       def modify(self: Monster): Monster = self.copy(ai = state2)
     }
 
     lazy val state2: Ai = new SimpleAi {
-      def attack[F[_] : Random]: Effect[F, MonsterAttack] = machineGun
+      def attack[F[_] : Random]: Effect[F, BattleAttack] = machineGun
       def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)
       def modify(self: Monster): Monster = self.copy(ai = state3)
     }
 
     lazy val state3: Ai = new SimpleAi {
-      def attack[F[_] : Random]: Effect[F, MonsterAttack] = doubleMachineGun
+      def attack[F[_] : Random]: Effect[F, BattleAttack] = doubleMachineGun
       def target[F[_] : Random](targets: Team): Effect[F, Person] =
         targets.toNel.minimumBy1(_.hp)
       def modify(self: Monster): Monster = self.copy(ai = state1)

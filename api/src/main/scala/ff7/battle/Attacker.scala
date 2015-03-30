@@ -30,5 +30,5 @@ trait Attacker {
   def magicAttackPercent: MagicAttackPercent
   def defensePercent: DefensePercent
   def asPerson: Person
-  def chosenAttack: MonsterAttack
+  def chosenAttack: BattleAttack
 }

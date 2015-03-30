@@ -18,10 +18,10 @@ package ff7
 package monsters
 
 import algebra._
-import battle.{BattleAction, MonsterAttack, Person, Team}
+import battle.{BattleAction, BattleAttack, Person, Team}
 
 trait SimpleAi extends Ai with NoSetup {
-  def attack[F[_] : Random]: Effect[F, MonsterAttack]
+  def attack[F[_] : Random]: Effect[F, BattleAttack]
 
   def target[F[_] : Random](targets: Team): Effect[F, Person]
 

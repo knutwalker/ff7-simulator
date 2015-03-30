@@ -19,7 +19,7 @@ package battle
 
 import stats._
 
-sealed class MonsterAttack(
+sealed class BattleAttack(
   val name: String,
   val cost: Option[MP],
   val attackType: AttackType,
@@ -33,13 +33,13 @@ sealed class MonsterAttack(
 
   override def toString: String = s"$name${cost.fold("")(c ⇒ s" (${c.x} MP)")}"
 }
-object MonsterAttack {
-  def physical(name: String, percent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): MonsterAttack =
-    new MonsterAttack(name, cost, AttackType.Physical, FormulaType.Physical, power) {
+object BattleAttack {
+  def physical(name: String, percent: AttackPercent = AttackPercent(100), power: Power = Power(1), cost: Option[MP] = None): BattleAttack =
+    new BattleAttack(name, cost, AttackType.Physical, FormulaType.Physical, power) {
       override def attackPercent: AttackPercent = percent
     }
-  def magical(name: String, cost: MP, percent: MagicAttackPercent = MagicAttackPercent(100), power: Power = Power(1)): MonsterAttack =
-    new MonsterAttack(name, Some(cost), AttackType.Magical, FormulaType.Magical, power) {
+  def magical(name: String, cost: MP, percent: MagicAttackPercent = MagicAttackPercent(100), power: Power = Power(1)): BattleAttack =
+    new BattleAttack(name, Some(cost), AttackType.Magical, FormulaType.Magical, power) {
       override def magicAttackPercent: MagicAttackPercent = percent
     }
 }

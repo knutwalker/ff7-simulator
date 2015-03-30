@@ -19,42 +19,42 @@ package monsters
 package midgar1
 package reactor1
 
-import battle.MonsterAttack
+import battle.BattleAttack
 import stats.{MP, Power, AttackPercent}
 
 import spire.math.Rational
 
 object Attacks {
   val machineGun =
-    MonsterAttack.physical("Machine Gun")
+    BattleAttack.physical("Machine Gun")
 
   val tonfa =
-    MonsterAttack.physical("Tonfa", AttackPercent(85), Power(Rational(3, 2)))
+    BattleAttack.physical("Tonfa", AttackPercent(85), Power(Rational(3, 2)))
 
   val bite =
-    MonsterAttack.physical("Bite")
+    BattleAttack.physical("Bite")
 
   val tentacle =
-    MonsterAttack.physical("Tentacle", AttackPercent(90), Power(Rational(3, 2)))
+    BattleAttack.physical("Tentacle", AttackPercent(90), Power(Rational(3, 2)))
 
   val drillDrive =
-    MonsterAttack.physical("Drilldrive")
+    BattleAttack.physical("Drilldrive")
 
   val fire =
-    MonsterAttack.magical("Fire", MP(4), power = Power(Rational(1, 2)))
+    BattleAttack.magical("Fire", MP(4), power = Power(Rational(1, 2)))
 
   val handClaw =
-    MonsterAttack.physical("Handclaw")
+    BattleAttack.physical("Handclaw")
 
   val beamGun =
-    MonsterAttack.physical("Beam Gun", power = Power(Rational(9, 8)))
+    BattleAttack.physical("Beam Gun", power = Power(Rational(9, 8)))
 
   val laserCannon =
-    MonsterAttack.physical("Laser Cannon")
+    BattleAttack.physical("Laser Cannon")
 
   val doubleMachineGun =
-    MonsterAttack.physical("W Machine Gun", power = Power(Rational(7, 4)))
+    BattleAttack.physical("W Machine Gun", power = Power(Rational(7, 4)))
 
   val smokeShot =
-    MonsterAttack.physical("Smoke Shot", AttackPercent(75), Power(Rational(3, 2)))
+    BattleAttack.physical("Smoke Shot", AttackPercent(75), Power(Rational(3, 2)))
 }
