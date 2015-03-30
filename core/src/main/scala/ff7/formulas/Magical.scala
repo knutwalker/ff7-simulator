@@ -29,23 +29,24 @@ object Magical extends Formula {
   def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
     checkIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else   Effect.point(Hit.missed)
+      else   Hit.missed.effect
     }
   }
 
   def checkIfHits[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = for {
     instantMiss ← checkMagicDefense(target)
-    hits ← if (instantMiss) Effect.point[F, Boolean](false)
+    hits ← if (instantMiss) false.effect[F]
            else             checkHitsPercentage(attacker, target)
   } yield hits
 
   def checkMagicDefense[F[_]: Random](target: Target): Effect[F, Boolean] =
     Effect.percent(target.magicDefensePercent.x)
 
-  def checkHitsPercentage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = {
-    val hitp = attacker.magicAttackPercent.x + attacker.level.x - (target.level.x / 2) - 1
-    Effect.chooseInt(0, 99).map(_ < hitp)
-  }
+  def checkHitsPercentage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] =
+    Effect.chooseInt(0, 99).map(_ < hitsPercentage(attacker, target))
+
+  def hitsPercentage(attacker: Attacker, target: Target): Int =
+    attacker.magicAttackPercent.x + attacker.level.x - (target.level.x / 2) - 1
 
   def calculateDamage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
     val damage = calculateBaseDamage(attacker, target)

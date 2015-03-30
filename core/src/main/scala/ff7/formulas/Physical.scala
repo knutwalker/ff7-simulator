@@ -81,10 +81,11 @@ object Physical extends Formula {
     ((power * (512 - target.defense.x) * base) / (16 * 512)).toInt
   }
 
-  def calculateCritical[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] = {
-    val criticalPercent = Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
-    percent.map(_ <= criticalPercent)
-  }
+  def calculateCritical[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] =
+    percent.map(_ <= criticalPercent(attacker, target))
+
+  def criticalPercent(attacker: Attacker, target: Target): Int =
+    Rational(attacker.luck.x + attacker.level.x - target.level.x, 4).toInt
 
   def applyCritical(critical: Boolean, damage: Int): Int =
     if (critical) damage * 2 else damage
