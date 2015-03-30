@@ -68,7 +68,7 @@ final case class Character(
   def attackMagical: Attacker =
     CharacterAttacks(copy(mp = MP(mp.x - magicalAttack.cost.fold(0)(_.x))), magicalAttack)
 
-  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Special \/ BattleAttack] =
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Special \/ BattleAction] =
     list.toNel(opponents.alivesInOrder)
       .fold(Character.noAttack)(Character.selectAttack(this, allies))
 
@@ -91,14 +91,14 @@ final case class Character(
 }
 object Character {
 
-  private def noAttack[F[_]: Interact : Random]: Effect[F, Special \/ BattleAttack] =
-    point(\/.right(BattleAttack.none))
+  private def noAttack[F[_]: Interact : Random]: Effect[F, Special \/ BattleAction] =
+    point(\/.right(BattleAction.none))
 
   private def selectAttack[F[_]: Interact](
     c: Character,
     allies: Team)(
     persons: NonEmptyList[Person])
-  : Effect[F, Special \/ BattleAttack] = {
+  : Effect[F, Special \/ BattleAction] = {
     val actions: List[CharacterAction] = CharacterAction.actions.list.collect {
       case a@CharacterAction.Magic if c.hasMagicAttack ⇒ a
       case a@CharacterAction.Attack ⇒ a
@@ -121,8 +121,8 @@ object Character {
     c: Character,
     as: Team,
     ps: NonEmptyList[Person])
-  : Effect[F, Special \/ BattleAttack] =
-    d.traverse[({type λ[α] = Effect[F, α]})#λ, Special, Special \/ BattleAttack](
+  : Effect[F, Special \/ BattleAction] =
+    d.traverse[({type λ[α] = Effect[F, α]})#λ, Special, Special \/ BattleAction](
       evaluateDecision[F](_, c, as, ps)).map(_.flatMap(x ⇒ x))
 
   private def evaluateDecision[F[_]: Interact](
@@ -130,7 +130,7 @@ object Character {
     c: Character,
     as: Team,
     ps: NonEmptyList[Person])
-  : Effect[F, Special \/ BattleAttack] = d match {
+  : Effect[F, Special \/ BattleAction] = d match {
     case CharacterAction.Attack ⇒
       selectPerson(c.attackPhysical, as, ps)
     case CharacterAction.Magic ⇒
@@ -140,10 +140,10 @@ object Character {
 //    case CharacterAction.Defend ⇒
 //      BattleAttack.none.right[Special].effect[F]
     case CharacterAction.Skip ⇒
-      BattleAttack.none.right[Special].effect[F]
+      BattleAction.none.right[Special].effect[F]
   }
 
-  private def selectPerson[F[_]: Interact](a: Attacker, allies: Team, persons: NonEmptyList[Person]): Effect[F, Special \/ BattleAttack] =
+  private def selectPerson[F[_]: Interact](a: Attacker, allies: Team, persons: NonEmptyList[Person]): Effect[F, Special \/ BattleAction] =
     selectSomething(s"$a: Choose your enemy", a.asPerson, allies, persons)
-      .map(_.map(_.cata(p ⇒ BattleAttack(a, p.asTarget), BattleAttack.none)))
+      .map(_.map(_.cata(p ⇒ BattleAction(a, p.asTarget), BattleAction.none)))
 }

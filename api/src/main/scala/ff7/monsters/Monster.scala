@@ -51,17 +51,17 @@ final case class Monster(
   def attacks(a: MonsterAttack): MonsterAttacks =
     MonsterAttacks(this, a)
 
-  def attacks(p: Person, a: MonsterAttack): BattleAttack =
-    BattleAttack(attacks(a), p.asTarget)
+  def attacks(p: Person, a: MonsterAttack): BattleAction =
+    BattleAction(attacks(a), p.asTarget)
 
   val asTarget: Target = this
   val asPerson: Person = this
   val isHero: Boolean = false
 
-  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAttack] = {
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAction] = {
     opponents.alives.toNel
       .some(ops ⇒ ai.apply(this, ops.toTeam))
-      .none(point(BattleAttack.none))
+      .none(point(BattleAction.none))
       .map(_.right)
   }
 

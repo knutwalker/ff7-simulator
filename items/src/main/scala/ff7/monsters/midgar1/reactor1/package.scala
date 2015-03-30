@@ -19,7 +19,7 @@ package monsters
 package midgar1
 
 import algebra._
-import battle.{BattleAttack, MonsterAttack, Person, Team}
+import battle.{BattleAction, MonsterAttack, Person, Team}
 import stats.MP
 
 import scalaz._
@@ -48,7 +48,7 @@ package reactor1 {
 
   object MonoDrive extends Ai with NoSetup {
 
-    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
+    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAction] =
       Effect.chance(1, 3).map { roll ⇒
         if (roll && fire.availableFor(self)) {
           val attack = fire
@@ -73,13 +73,13 @@ package reactor1 {
   }
 
   class FirstRay(count: Int) extends Ai with NoSetup {
-    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] = {
+    def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAction] = {
       if (count == 0) {
         val tar = targets.toNel.maximumBy1(_.hp)
         val att = laserCannon
         self.copy(ai = new FirstRay(1)).attacks(tar, att).effect
       } else {
-        BattleAttack.change(self.copy(ai = new FirstRay(0))).effect
+        BattleAction.change(self.copy(ai = new FirstRay(0))).effect
       }
     }
   }

@@ -27,7 +27,7 @@ trait Person {
   def hp: HP
   def mp: MP
   def asTarget: Target
-  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAttack]
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAction]
   def isHero: Boolean
   def hit(h: Hit): Person
 }

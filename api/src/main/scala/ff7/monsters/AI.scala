@@ -18,11 +18,11 @@ package ff7
 package monsters
 
 import algebra.{Effect, Random}
-import battle.{BattleAttack, Team}
+import battle.{BattleAction, Team}
 
 trait Ai extends {
   def setup[F[_]: Random](self: Monster): Effect[F, Monster]
-  def apply[F[_]: Random](self: Monster, targets: Team): Effect[F, BattleAttack]
+  def apply[F[_]: Random](self: Monster, targets: Team): Effect[F, BattleAction]
 }
 
 trait NoSetup { self: Ai ⇒
@@ -30,6 +30,6 @@ trait NoSetup { self: Ai ⇒
 }
 
 trait Setup { self: Ai ⇒
-  def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] =
-    BattleAttack.none.effect
+  def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAction] =
+    BattleAction.none.effect
 }

@@ -18,7 +18,7 @@ package ff7
 package monsters
 
 import algebra._
-import battle.{BattleAttack, MonsterAttack, Person, Team}
+import battle.{BattleAction, MonsterAttack, Person, Team}
 
 trait SimpleAi extends Ai with NoSetup {
   def attack[F[_] : Random]: Effect[F, MonsterAttack]
@@ -27,7 +27,7 @@ trait SimpleAi extends Ai with NoSetup {
 
   def modify(self: Monster): Monster
 
-  final def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAttack] = {
+  final def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAction] = {
     val tar = target(targets)
     val att = attack
     val mon = modify(self)

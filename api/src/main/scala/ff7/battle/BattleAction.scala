@@ -19,20 +19,20 @@ package battle
 
 import monsters.Monster
 
-sealed trait BattleAttack
-object BattleAttack {
-  val abort: BattleAttack = Abort
-  val none: BattleAttack = None
+sealed trait BattleAction
+object BattleAction {
+  val abort: BattleAction = Abort
+  val none: BattleAction = None
 
-  def change(monster: Monster): BattleAttack =
+  def change(monster: Monster): BattleAction =
     Change(monster)
 
-  def apply(attacker: Attacker, target: Target): BattleAttack =
+  def apply(attacker: Attacker, target: Target): BattleAction =
     Attack(attacker, target)
 
 
-  case object Abort extends BattleAttack
-  case object None extends BattleAttack
-  final case class Change(monster: Monster) extends BattleAttack
-  final case class Attack(attacker: Attacker, target: Target) extends BattleAttack
+  case object Abort extends BattleAction
+  case object None extends BattleAction
+  final case class Change(monster: Monster) extends BattleAction
+  final case class Attack(attacker: Attacker, target: Target) extends BattleAction
 }
