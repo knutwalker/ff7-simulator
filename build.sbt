@@ -7,14 +7,14 @@ lazy val versions = new {
   val    rxswing = "0.22.0"
   val      scala = "2.11.6"
   val scalacheck = "1.12.2"
-  val    scalafx = "8.0.31-R7"
+  val    scalafx = "8.0.40-R8"
   val     scalaz = "7.1.1"
   val      scopt = "3.3.0"
   val  shapeless = "0.3"
-  val     specs2 = "3.0"
+  val     specs2 = "3.3.1"
   val      spire = "0.9.1"
   val scalaSwing = "1.0.1"
-  val  zForSpecs = "0.3.0"
+  val  zForSpecs = "0.4.0"
 }
 
 lazy val deps = new {
