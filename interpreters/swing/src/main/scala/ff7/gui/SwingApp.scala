@@ -17,7 +17,7 @@
 package ff7
 package gui
 
-import algebra._
+import interact._
 
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.subjects.PublishSubject

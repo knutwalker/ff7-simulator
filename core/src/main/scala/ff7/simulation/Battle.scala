@@ -17,9 +17,11 @@
 package ff7
 package simulation
 
-import algebra.{Effect, Interact, Random}
+import interact.Interact
 import battle.{BattleField, Person}
 import monsters.Monster
+
+import algebras._, Algebras._
 
 import scalaz._
 import Scalaz._

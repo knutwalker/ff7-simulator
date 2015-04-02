@@ -16,7 +16,7 @@
 
 package ff7
 
-import algebra._
+import interact._
 import InteractOp._
 
 import scalaz._

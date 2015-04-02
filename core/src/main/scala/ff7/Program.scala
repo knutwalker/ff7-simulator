@@ -16,9 +16,10 @@
 
 package ff7
 
-import algebra._
-import Effect._
+import interact.Interact
 import battle.BattleField
+
+import algebras._, Algebras._
 
 import scalaz._
 import Scalaz._
@@ -40,10 +41,10 @@ class Program[F[_]: Log: Interact: Random] {
 
   def runRounds(repetitions: Int,enemies: Team): Effect[F, Option[RoundState]] = party.flatMap { pVal ⇒
     pVal.fold(
-      fail = errors ⇒ errors.traverse_[X](Effect.warn[F]) as none,
+      fail = errors ⇒ errors.traverse_[X](Log.warn[F]) as none,
       succ = { p ⇒
         runAllRoundsState(repetitions, enemies).eval(RoundState(p, 0, 0)).flatMap { rs ⇒
-          info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.") as rs.some
+          Log.info(s"Simulation finished after ${rs.rounds} rounds and ${rs.turns} turns in total.") as rs.some
         }
       }
     )
@@ -60,7 +61,7 @@ class Program[F[_]: Log: Interact: Random] {
   def runRound(enemies: Team)(rs: RoundState): Effect[F, RoundState] =
     enemies.flatMap { esVal ⇒
       esVal.fold(
-        fail = errors ⇒ errors.traverse_[X](Effect.warn[F]) as rs,
+        fail = errors ⇒ errors.traverse_[X](Log.warn[F]) as rs,
         succ = { es ⇒
           program(BattleField.init(rs.heroes, es)).map { f =>
           val team = if (f.enemies.isHero) f.enemies else f.heroes
@@ -70,11 +71,11 @@ class Program[F[_]: Log: Interact: Random] {
     }
 
   def program(field: BattleField): Effect[F, BattleField] = for {
-    _      ← debug("Starting simulation")
-    _      ← showMessage(s"Starting a new round with $field")
+    _      ← Log.debug("Starting simulation")
+    _      ← Interact.showMessage(s"Starting a new round with $field")
     result ← Simulation(field)
-    _      ← showMessage(s"Finished round after ${result.history.size} turns")
-    _      ← debug("Simulation finished")
+    _      ← Interact.showMessage(s"Finished round after ${result.history.size} turns")
+    _      ← Log.debug("Simulation finished")
   } yield result
 }
 

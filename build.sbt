@@ -1,9 +1,8 @@
 lazy val versions = new {
+  val   algebras = "0.1.0"
   val     config = "1.2.1"
   val      jline = "2.12.1"
   val      log4j = "2.2"
-  val    logging = "3.1.0"
-  val        rng = "1.3.0"
   val    rxscala = "0.24.0"
   val    rxswing = "0.22.0"
   val      scala = "2.11.6"
@@ -21,19 +20,28 @@ lazy val versions = new {
 lazy val deps = new {
   import versions._
 
+  val interact = List(
+    "de.knutwalker"               %% "algebra-effect"             % algebras   )
+
   val api = List(
+    "de.knutwalker"               %% "algebra-random"             % algebras   ,
     "org.spire-math"              %% "spire"                      % spire      ,
     "org.typelevel"               %% "shapeless-scalaz"           % shapeless
       exclude("org.scalaz", "scalaz-core_2.11")                                )
-
-  val algebra = List(
-    "org.scalaz"                  %% "scalaz-core"                % scalaz     )
 
   val items = List(
     "org.scala-lang"               % "scala-reflect"              % scala      ,
     "com.typesafe"                 % "config"                     % config     )
 
+  val core = List(
+    "de.knutwalker"               %% "algebra-log"                % algebras   )
+
   val main = List(
+    "de.knutwalker"               %% "algebra-interpreter-slf4j"  % algebras   ,
+    "de.knutwalker"               %% "algebra-interpreter-rng"    % algebras   ,
+    "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
+    "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
+    "org.apache.logging.log4j"     % "log4j-slf4j-impl"           % log4j      ,
     "com.github.scopt"            %% "scopt"                      % scopt      )
 
   val tui = List(
@@ -52,19 +60,6 @@ lazy val deps = new {
     "org.scalafx"                 %% "scalafx"                    % scalafx    ,
     "io.reactivex"                %% "rxscala"                    % rxscala    )
 
-  val random = List(
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "com.nicta"                   %% "rng"                        % rng
-      exclude("org.scalaz", "scalaz-effect_2.11")
-      exclude("org.scalaz", "scalaz-core_2.11")                                )
-
-  val log = List(
-    "org.scalaz"                  %% "scalaz-effect"              % scalaz     ,
-    "com.typesafe.scala-logging"  %% "scala-logging"              % logging    ,
-    "org.apache.logging.log4j"     % "log4j-api"                  % log4j      ,
-    "org.apache.logging.log4j"     % "log4j-core"                 % log4j      ,
-    "org.apache.logging.log4j"     % "log4j-slf4j-impl"           % log4j      )
-
   val tests = List(
     "org.specs2"                  %% "specs2-core"                % specs2     ,
     "org.specs2"                  %% "specs2-scalacheck"          % specs2     ,
@@ -75,12 +70,12 @@ lazy val deps = new {
     .map(_ % "test")
 }
 
-lazy val algebra = project settings (
+lazy val interact = project settings (
   ff7Settings,
-  name := "ff7-algebra",
-  libraryDependencies ++= deps.algebra)
+  name := "ff7-interact",
+  libraryDependencies ++= deps.interact)
 
-lazy val api = project dependsOn algebra settings (
+lazy val api = project dependsOn interact settings (
   ff7Settings,
   name := "ff7-api",
   libraryDependencies ++= deps.api)
@@ -94,34 +89,25 @@ lazy val core = project dependsOn items configs (RunDebug, RunProfile) settings 
   debugSettings,
   profileSettings,
   ff7Settings,
-  name := "ff7-core")
+  name := "ff7-core",
+  libraryDependencies ++= deps.core)
 
-lazy val tui = project in file("interpreters") / "tui" dependsOn algebra settings (
+lazy val tui = project in file("interpreters") / "tui" dependsOn interact settings (
   ff7Settings,
   name := "ff7-interpreter-tui",
   libraryDependencies ++= deps.tui)
 
-lazy val swing = project in file("interpreters") / "swing" dependsOn algebra settings (
+lazy val swing = project in file("interpreters") / "swing" dependsOn interact settings (
   ff7Settings,
   name := "ff7-interpreter-swing",
   libraryDependencies ++= deps.swing)
 
-lazy val sfx = project in file("interpreters") / "sfx" dependsOn algebra settings (
+lazy val sfx = project in file("interpreters") / "sfx" dependsOn interact settings (
   ff7Settings,
   name := "ff7-interpreter-scala-fx",
   libraryDependencies ++= deps.sfx)
 
-lazy val random = project in file("interpreters") / "random" dependsOn algebra settings (
-  ff7Settings,
-  name := "ff7-interpreter-random",
-  libraryDependencies ++= deps.random)
-
-lazy val log = project in file("interpreters") / "log" dependsOn algebra settings (
-  ff7Settings,
-  name := "ff7-interpreter-log",
-  libraryDependencies ++= deps.log)
-
-lazy val main = project dependsOn (core, tui, swing, sfx, random, log) configs (RunDebug, RunProfile) settings (
+lazy val main = project dependsOn (core, tui, swing, sfx) configs (RunDebug, RunProfile) settings (
   debugSettings,
   profileSettings,
   ff7Settings,
@@ -137,9 +123,9 @@ lazy val dist = project settings (
   resourceDirectory <<= baseDirectory { _ / "scripts" },
              target <<= baseDirectory { _ / "app" })
 
-lazy val parent = project in file(".") dependsOn (algebra, api, core, items, log, main, random, sfx, swing, tests, tui) configs (
+lazy val parent = project in file(".") dependsOn (interact, api, core, items, main, sfx, swing, tests, tui) configs (
   RunDebug, RunProfile) aggregate (
-  algebra, api, core, dist, items, log, main, random, sfx, swing, tests, tui) settings (
+  interact, api, core, dist, items, main, sfx, swing, tests, tui) settings (
   debugSettings,
   profileSettings,
   ff7Settings,

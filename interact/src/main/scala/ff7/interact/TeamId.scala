@@ -14,21 +14,12 @@
  * limitations under the License.
  */
 
-package ff7
+package ff7.interact
 
-import algebra.RandomOp.ChooseInt
-import algebra._
-
-import scalaz._
-import effect.IO
-
-import com.nicta.rng.Rng
-
-package object random {
-
-  val Interpreter: RandomOp ~> IO = new (RandomOp ~> IO) {
-    def apply[A](fa: RandomOp[A]): IO[A] = fa match {
-      case ChooseInt(l, u) ⇒ Rng.chooseint(l, u).run
-    }
-  }
+sealed trait TeamId {
+  def id: String
+}
+object TeamId {
+  case object Allies extends TeamId { val id = "allies" }
+  case object Opponents extends TeamId { val id = "opponents" }
 }

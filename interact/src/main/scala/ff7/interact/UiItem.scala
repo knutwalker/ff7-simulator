@@ -14,12 +14,7 @@
  * limitations under the License.
  */
 
-package ff7.algebra
+package ff7
+package interact
 
-sealed trait LogLevel
-object LogLevel {
-  case object Debug extends LogLevel
-  case object Info extends LogLevel
-  case object Warn extends LogLevel
-  case object Error extends LogLevel
-}
+case class UiItem(text: String, active: Boolean)

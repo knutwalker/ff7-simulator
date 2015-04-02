@@ -17,7 +17,7 @@
 package ff7
 package gui
 
-import algebra.{Input, TeamId, UiItem}
+import interact.{Input, TeamId, UiItem}
 
 import rx.lang.scala.JavaConversions._
 import rx.lang.scala.subjects.{AsyncSubject, PublishSubject}

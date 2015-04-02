@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-import ff7.algebra.Effect
 import ff7.battle.{Person, Team}
 
 import scalaz._
@@ -40,9 +39,5 @@ package object ff7 {
 
   implicit class TeamNel(val ps: NonEmptyList[Person]) extends AnyVal {
     def toTeam: Team = Team(ps.head, ps.tail, None)
-  }
-
-  implicit class AnyInteractOps[A](val x: A) extends AnyVal {
-    def effect[F[_]]: Effect[F, A] = Effect.point(x)
   }
 }

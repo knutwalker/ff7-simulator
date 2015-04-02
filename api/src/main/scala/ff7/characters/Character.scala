@@ -17,11 +17,12 @@
 package ff7
 package characters
 
-import algebra.Effect._
-import algebra.Input.Special
-import ff7.algebra._
+import interact.Input.Special
+import interact.Interact
 import battle._
 import stats._
+
+import algebras._, Algebras._
 
 import scalaz._
 import Maybe._
@@ -92,7 +93,7 @@ final case class Character(
 object Character {
 
   private def noAttack[F[_]: Interact : Random]: Effect[F, Special \/ BattleAction] =
-    point(\/.right(BattleAction.none))
+    BattleAction.none.right[Special].effect
 
   private def selectAttack[F[_]: Interact](
     c: Character,
@@ -113,7 +114,7 @@ object Character {
   private def selectSomething[F[_]: Interact, A](msg: String, player: Person, team: Team, things: NonEmptyList[A]): Effect[F, Special \/ Option[A]] = {
     val aliveAllies = team.alivesInOrder
     val currentAttacker = aliveAllies.indexOf(player)
-    Interacts.readList(msg, aliveAllies, currentAttacker, things)
+    Interact.readList(msg, aliveAllies, currentAttacker, things)
   }
 
   private def evaluateMaybeDecision[F[_]: Interact](

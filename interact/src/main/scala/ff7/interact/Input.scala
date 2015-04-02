@@ -14,12 +14,28 @@
  * limitations under the License.
  */
 
-package ff7.algebra
+package ff7
+package interact
 
-sealed trait TeamId {
-  def id: String
-}
-object TeamId {
-  case object Allies extends TeamId { val id = "allies" }
-  case object Opponents extends TeamId { val id = "opponents" }
+
+sealed trait Input
+object Input {
+  val up: Input = Up
+  val down: Input = Down
+  val right: Input = Right
+  val left: Input = Left
+  val ok: Input = Ok
+  val cancel: Input = Cancel
+  val quit: Input = Quit
+  val undo: Input = Undo
+
+  sealed trait Special
+  case object Up extends Input
+  case object Down extends Input
+  case object Right extends Input
+  case object Left extends Input
+  case object Ok extends Input
+  case object Cancel extends Input
+  case object Quit extends Input with Special
+  case object Undo extends Input with Special
 }

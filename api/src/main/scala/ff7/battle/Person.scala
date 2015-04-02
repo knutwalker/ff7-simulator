@@ -17,8 +17,10 @@
 package ff7
 package battle
 
-import algebra.{Effect, Input, Interact, Random}
+import interact.{Input, Interact}
 import stats._
+
+import algebras.{Effect, Random}
 
 import scalaz.\/
 

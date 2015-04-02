@@ -17,7 +17,7 @@
 package ff7
 package formulas
 
-import algebra.{Effect, Random}
+import algebras.{Effect, Random}
 import battle.{Attacker, Hit, Target}
 
 trait Formula {

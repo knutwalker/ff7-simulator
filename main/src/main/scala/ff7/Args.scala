@@ -16,13 +16,14 @@
 
 package ff7
 
-import algebra.{Effect, Random}
 import battle.Team
 import monsters.Monster
 
+import algebras._, Algebras._
+
 import scalaz._
 import Scalaz._
-import effect._
+import effect.IO
 
 import scala.collection.immutable.Map
 
@@ -58,7 +59,7 @@ object Args {
       opt[Map[String, Int]]('m', "monster") unbounded() action { (m, o) ⇒
         o.copy(monsters = o.monsters ::: m.toList)
       } validate { case ms ⇒
-        ms.toList.traverse_[({type l[x] = Either[String, x]})#l] { case (m, c) ⇒
+        ms.toList.traverse_[({type λ[α] = Either[String, α]})#λ] { case (m, c) ⇒
           if (c > 0 && c <= 5) {
             val monster = Monsters.selectDynamic(m)
             monster.fold(es ⇒ failure(es.list.mkString(", ")), m ⇒ success)
@@ -72,8 +73,8 @@ object Args {
       Encounters.midgar1
         .traverse[({type λ[α] = Effect[F, α]})#λ, NonEmptyList[String], Team] { es ⇒
           for {
-            e ← Effect.oneOfL(es)
-            g ← Effect.oneOfL(e.groups)
+            e ← Random.oneOfL(es)
+            g ← Random.oneOfL(e.groups)
           } yield g.monsters
         }
 

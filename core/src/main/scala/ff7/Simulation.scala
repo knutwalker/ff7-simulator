@@ -16,9 +16,11 @@
 
 package ff7
 
-import algebra.{Effect, Interact, Random}
+import interact.Interact
 import battle.BattleField
 import simulation.{Battle, Turn}
+
+import algebras._
 
 class Simulation[F[_]: Interact: Random] {
   val state = Battle[F].state(Turn[F].state)

@@ -17,8 +17,9 @@
 package ff7
 package formulas
 
-import algebra.{Effect, Random}
 import battle.{Attacker, Hit, Target}
+
+import algebras._, Algebras._
 
 import spire.math.Rational
 
@@ -29,7 +30,7 @@ object Physical extends Formula {
   def apply[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] =
     calculateIfHits(attacker, target) flatMap { h ⇒
       if (h) calculateDamage(attacker, target)
-      else   Effect.point(Hit.missed)
+      else   Hit.missed.effect
     }
 
   def calculateIfHits[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] =
@@ -55,8 +56,10 @@ object Physical extends Formula {
     //   If a Lucky Evade is pulled off, then the Hit% is immediately decreased
     //   to 0%.
 
-    val hitPercent = ((attacker.dexterity / 4).x + attacker.attackPercent.x) + attacker.defensePercent.x - target.defensePercent.x
-    Effect.point(hitPercent)
+    // Hit% = ([Attacker's Dex / 4] + At%) + Attacker's Df% - Target's Df%
+
+    val hitPercent = Rational(attacker.dexterity.x, 4).toInt + attacker.attackPercent.x + attacker.defensePercent.x - target.defensePercent.x
+    hitPercent.effect
   }
 
   def calculateDamage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Hit] = {
@@ -65,10 +68,10 @@ object Physical extends Formula {
 
     for {
       c ← criticalHits
-      d1 ← Effect.point(applyCritical(c, damage))
+      d1 ← applyCritical(c, damage).effect
       // TODO: rows
       d3 ← applyVariance(d1)
-      d4 ← Effect.point(applyBounds(d3))
+      d4 ← applyBounds(d3).effect
     } yield {
       if (c) Hit.critical(d4)
       else Hit(d4)
@@ -97,12 +100,12 @@ object Physical extends Formula {
     min(9999, max(1, damage))
 
   def percent[F[_]: Random]: Effect[F, Int] =
-    Effect
+    Random
     .chooseInt(0, 65535)
     .map(i ⇒ Rational(i * 99, 65535).toInt + 1)
 
   def damageVariation[F[_]: Random]: Effect[F, Int] =
-    Effect
+    Random
     .chooseInt(0, 255)
     .map(_ + 3841)
 }

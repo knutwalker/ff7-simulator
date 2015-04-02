@@ -17,8 +17,9 @@
 package ff7
 package formulas
 
-import algebra.{Effect, Random}
 import battle.{Attacker, Hit, Target}
+
+import algebras._, Algebras._
 
 import spire.math.Rational
 
@@ -40,10 +41,10 @@ object Magical extends Formula {
   } yield hits
 
   def checkMagicDefense[F[_]: Random](target: Target): Effect[F, Boolean] =
-    Effect.percent(target.magicDefensePercent.x)
+    Random.percent(target.magicDefensePercent.x)
 
   def checkHitsPercentage[F[_]: Random](attacker: Attacker, target: Target): Effect[F, Boolean] =
-    Effect.chooseInt(0, 99).map(_ < hitsPercentage(attacker, target))
+    Random.chooseInt(0, 99).map(_ < hitsPercentage(attacker, target))
 
   def hitsPercentage(attacker: Attacker, target: Target): Int =
     attacker.magicAttackPercent.x + attacker.level.x - (target.level.x / 2) - 1
@@ -52,7 +53,7 @@ object Magical extends Formula {
     val damage = calculateBaseDamage(attacker, target)
     for {
       d1 ← applyVariance(damage)
-      d2 ← Effect.point(applyBounds(d1))
+      d2 ← applyBounds(d1).effect
     } yield Hit(d2)
   }
 
@@ -69,6 +70,6 @@ object Magical extends Formula {
     min(9999, max(1, damage))
 
   def damageVariation[F[_]: Random]: Effect[F, Int] =
-    Effect.chooseInt(0, 255)
+    Random.chooseInt(0, 255)
     .map(_ + 3841)
 }

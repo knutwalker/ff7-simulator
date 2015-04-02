@@ -17,13 +17,17 @@
 package ff7
 package monsters
 
-import algebra.Effect.point
-import algebra._
+import interact.Input.Special
+import interact.Interact
 import battle._
 import stats._
 
+import algebras._, Algebras._
+
 import scalaz._
 import Scalaz._
+
+
 
 final case class Monster(
   name: String,
@@ -58,10 +62,10 @@ final case class Monster(
   val asPerson: Person = this
   val isHero: Boolean = false
 
-  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Input.Special \/ BattleAction] = {
+  def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Special \/ BattleAction] = {
     opponents.alives.toNel
       .some(ops ⇒ ai.apply(this, ops.toTeam))
-      .none(point(BattleAction.none))
+      .none(BattleAction.none.effect[F])
       .map(_.right)
   }
 

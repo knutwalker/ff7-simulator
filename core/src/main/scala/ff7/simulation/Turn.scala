@@ -17,8 +17,10 @@
 package ff7
 package simulation
 
-import algebra.{Effect, Input, Interact, Random}
+import interact.{Input, Interact}
 import battle._
+
+import algebras._, Algebras._
 
 import scalaz._
 import Scalaz._
@@ -87,7 +89,7 @@ final class Turn[F[_]: Interact: Random] {
       case Hit.Critical(x) ⇒
         s"$oa attacked $target using [${a.chosenAttack}] and hit critically with $x damage"
     }
-    Effect.showMessage(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateChange(bf: BattleField, br: BattleResult.Change): Effect[F, BattleField] = {
@@ -101,25 +103,25 @@ final class Turn[F[_]: Interact: Random] {
   def evaluateNoAttack(bf: BattleField): Effect[F, BattleField] = {
     val b = bf.round(BattleResult.none).swap.cycle
     val msg = "No attack happened"
-    Effect.showMessage(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateAbort(bf: BattleField): Effect[F, BattleField] = {
     val b = bf.round(BattleResult.aborted).copy(aborted = true)
     val msg = "Attack was aborted"
-    Effect.showMessage(msg) >| b
+    Interact.showMessage(msg) >| b
   }
 
   def evaluateUndo(bf: BattleField): Effect[F, BattleField] = bf match {
     case BattleField(_, _, _, _ :: prev :: _, _, _) ⇒
       val msg = "The last two attacks were undone"
-      Effect.showMessage(msg) >| prev
+      Interact.showMessage(msg) >| prev
     case BattleField(_, _, _, prev :: _, _, _) ⇒
       val msg = "The last attack was undone"
-      Effect.showMessage(msg) >| prev
+      Interact.showMessage(msg) >| prev
     case _ ⇒
       val msg = "An attack should have been undone, but there was no history yet"
-      Effect.showMessage(msg) >| bf
+      Interact.showMessage(msg) >| bf
   }
 }
 

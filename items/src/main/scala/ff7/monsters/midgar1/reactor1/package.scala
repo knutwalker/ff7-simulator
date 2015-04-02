@@ -19,11 +19,12 @@ package monsters
 package midgar1
 package reactor1
 
-import algebra._
 import Attacks._
 import battle.{BattleAction, BattleAttack, Person, Team}
 import monsters.Ai.{Setup, NoSetup}
 import stats.MP
+
+import algebras._, Algebras._
 
 import scalaz._
 import Scalaz._
@@ -34,14 +35,14 @@ import shapeless.contrib.scalaz._
 object Mp extends SimpleAi with RandomTarget with StatelessAi {
   def attack[F[_] : Random]: Effect[F, BattleAttack] =
     if (true) // if (heroes.rowPosition(self) == FrontRow)
-      Effect.choose(1, 2, tonfa, machineGun)
+      Random.choose(1, 2, tonfa, machineGun)
     else
-      Effect.choose(1, 6, tonfa, machineGun)
+      Random.choose(1, 6, tonfa, machineGun)
 }
 
 object GuardHound extends SimpleAi with StatelessAi {
   def attack[F[_] : Random]: Effect[F, BattleAttack] =
-    Effect.choose(1, 3, tentacle, bite)
+    Random.choose(1, 3, tentacle, bite)
 
  def target[F[_] : Random](targets: Team): Effect[F, Person] =
     targets.toNel.minimumBy1(_.hp)
@@ -50,7 +51,7 @@ object GuardHound extends SimpleAi with StatelessAi {
 object MonoDrive extends Ai with NoSetup {
 
   def apply[F[_] : Random](self: Monster, targets: Team): Effect[F, BattleAction] =
-    Effect.chance(1, 3).map { roll ⇒
+    Random.chance(1, 3).map { roll ⇒
       if (roll && fire.availableFor(self)) {
         val attack = fire
         val target = targets.toNel.minimumBy1(_.asTarget.magicDefense)
@@ -67,9 +68,9 @@ object MonoDrive extends Ai with NoSetup {
 
 object Grunt extends SimpleAi with RandomTarget with StatelessAi {
   def attack[F[_] : Random]: Effect[F, BattleAttack] = if (true) { // if (heroes.rowPosition(self) == FrontRow)
-    Effect.choose(1, 2, beamGun, handClaw)
+    Random.choose(1, 2, beamGun, handClaw)
   } else {
-    Effect.choose(1, 12, handClaw, beamGun)
+    Random.choose(1, 12, handClaw, beamGun)
   }
 }
 
@@ -111,7 +112,7 @@ object Sweeper extends Ai with Setup {
   }
 
   def setup[F[_] : Random](self: Monster): Effect[F, Monster] =
-    Effect.chooseInt(0, 3).map {
+    Random.chooseInt(0, 3).map {
       case 0 ⇒ self.copy(ai = state1)
       case 1 ⇒ self.copy(ai = state2)
       case _ ⇒ self.copy(ai = state3)

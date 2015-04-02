@@ -16,7 +16,7 @@
 
 package ff7
 
-import algebra.InteractOp
+import interact.InteractOp
 
 import scalaz._
 import scalaz.effect.IO

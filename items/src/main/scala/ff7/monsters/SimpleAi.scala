@@ -17,9 +17,10 @@
 package ff7
 package monsters
 
-import algebra._
 import battle.{BattleAction, BattleAttack, Person, Team}
 import monsters.Ai.NoSetup
+
+import algebras._
 
 trait SimpleAi extends Ai with NoSetup {
   def attack[F[_] : Random]: Effect[F, BattleAttack]
@@ -41,7 +42,7 @@ trait SimpleAi extends Ai with NoSetup {
 
 trait RandomTarget { self: SimpleAi ⇒
   def target[F[_] : Random](targets: Team): Effect[F, Person] =
-    Effect.oneOfL(targets.toNel)
+    Random.oneOfL(targets.toNel)
 }
 
 trait StatelessAi { self: SimpleAi ⇒

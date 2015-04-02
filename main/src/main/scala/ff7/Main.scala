@@ -16,9 +16,11 @@
 
 package ff7
 
-import algebra.InteractOp.ShowMessage
-import algebra._
-import ff7.Program.{Team, RoundState}
+import interact.InteractOp
+import Program.{Team, RoundState}
+import interact.InteractOp.ShowMessage
+
+import algebras._, Algebras._
 
 import scalaz._
 import effect.{IO, SafeApp}
@@ -54,7 +56,7 @@ object Main extends SafeApp {
     val delegate = ui.interpreter
     new (InteractOp ~> IO) {
       def apply[A](fa: InteractOp[A]): IO[A] = fa match {
-        case ShowMessage(s) ⇒ log.info(s).flatMap(_ ⇒ delegate(fa))
+        case ShowMessage(s) ⇒ log.Interpreter(LogOp.Logs(s, LogLevel.Info, None)).flatMap(_ ⇒ delegate(fa))
         case _              ⇒ delegate(fa)
       }
     }
