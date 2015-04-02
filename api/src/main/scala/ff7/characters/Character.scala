@@ -26,7 +26,6 @@ import algebras._, Algebras._
 
 import scalaz._
 import Scalaz._
-import scalaz.std.list
 
 import shapeless.contrib.scalaz._
 import spire.math.Rational
@@ -46,11 +45,11 @@ final case class Character(
   weapon: Option[Weapon],
   armour: Option[Armour]) extends Person with Target {
 
-  def power = weapon.foldMap(_.power)
-  def attack = weapon.foldMap(_.attack) + strength.x
-  def attackPercent = weapon.foldMap(_.attackPercent)
-  def defense = armour.foldMap(_.defense) + vitality.x
-  def defensePercent = armour.foldMap(_.defensePercent) + (dexterity / 4).x
+  def power: Power = weapon.foldMap(_.power)
+  def attack: Attack = weapon.foldMap(_.attack) + strength.x
+  def attackPercent: AttackPercent = weapon.foldMap(_.attackPercent)
+  def defense: Defense = armour.foldMap(_.defense) + vitality.x
+  def defensePercent: DefensePercent = armour.foldMap(_.defensePercent) + (dexterity / 4).x
 
   val asTarget: Target = this
   val asPerson: Person = this
@@ -69,7 +68,7 @@ final case class Character(
     CharacterAttacks(copy(mp = MP(mp.x - magicalAttack.cost.fold(0)(_.x))), magicalAttack)
 
   def chooseAttack[F[_]: Interact : Random](opponents: Team, allies: Team): Effect[F, Special \/ BattleAction] =
-    list.toNel(opponents.alivesInOrder)
+    opponents.alivesInOrder.toNel
       .fold(Character.noAttack)(Character.selectAttack(this, allies))
 
   def hit(h: Hit): Person = h match {
@@ -85,9 +84,9 @@ final case class Character(
   override def toString: String =
     s"$name [HP ${hp.x}/${maxHp.x} | MP ${mp.x}/${maxMp.x}]"
 
-  def magicAttack = MagicAttack(magic.x)
-  def magicDefense = armour.foldMap(_.magicDefense) + spirit.x
-  def magicDefensePercent = armour.foldMap(_.magicDefensePercent)
+  def magicAttack: MagicAttack = MagicAttack(magic.x)
+  def magicDefense: MagicDefense = armour.foldMap(_.magicDefense) + spirit.x
+  def magicDefensePercent: MagicDefensePercent = armour.foldMap(_.magicDefensePercent)
 }
 object Character {
 
