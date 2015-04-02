@@ -22,7 +22,6 @@ import monsters.{Ai, AiLoader, Monster}
 import stats._
 
 import scalaz._
-import Maybe._
 import Scalaz._
 
 import com.typesafe.config.{ConfigList, ConfigObject, ConfigValue, ConfigValueType}
@@ -178,8 +177,8 @@ object ConfigReader {
             Spirit(i),
             Luck(c),
             XP(xp),
-            fromOption(w),
-            fromOption(a)
+            w,
+            a
           )
         }
 

@@ -25,7 +25,6 @@ import stats._
 import algebras._, Algebras._
 
 import scalaz._
-import Maybe._
 import Scalaz._
 import scalaz.std.list
 
@@ -44,8 +43,8 @@ final case class Character(
   spirit: Spirit,
   luck: Luck,
   xp: XP,
-  weapon: Maybe[Weapon],
-  armour: Maybe[Armour]) extends Person with Target {
+  weapon: Option[Weapon],
+  armour: Option[Armour]) extends Person with Target {
 
   def power = weapon.foldMap(_.power)
   def attack = weapon.foldMap(_.attack) + strength.x
