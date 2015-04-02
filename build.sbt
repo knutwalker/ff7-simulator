@@ -80,12 +80,16 @@ lazy val api = project dependsOn interact settings (
   name := "ff7-api",
   libraryDependencies ++= deps.api)
 
+lazy val formulas = project dependsOn api settings (
+  ff7Settings,
+  name := "ff7-formulas")
+
 lazy val items = project dependsOn api settings (
   ff7Settings,
   name := "ff7-items",
   libraryDependencies ++= deps.items)
 
-lazy val core = project dependsOn items configs (RunDebug, RunProfile) settings (
+lazy val core = project dependsOn (formulas, items) configs (RunDebug, RunProfile) settings (
   debugSettings,
   profileSettings,
   ff7Settings,
@@ -123,9 +127,9 @@ lazy val dist = project settings (
   resourceDirectory <<= baseDirectory { _ / "scripts" },
              target <<= baseDirectory { _ / "app" })
 
-lazy val parent = project in file(".") dependsOn (interact, api, core, items, main, sfx, swing, tests, tui) configs (
+lazy val parent = project in file(".") dependsOn (interact, api, core, formulas, items, main, sfx, swing, tests, tui) configs (
   RunDebug, RunProfile) aggregate (
-  interact, api, core, dist, items, main, sfx, swing, tests, tui) settings (
+  interact, api, core, dist, formulas, items, main, sfx, swing, tests, tui) settings (
   debugSettings,
   profileSettings,
   ff7Settings,
